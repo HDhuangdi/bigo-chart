@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>trade-chart demo</title>
+  </head>
+  <style>
+    * {
+      padding: 0;
+      margin: 0;
+    }
+    html,
+    body {
+      height: 100%;
+    }
+    #chart {
+      position: absolute;
+      left: 50%;
+      transform: translate(-50%);
+      background-color: #191b20;
+    }
+  </style>
+  <body>
+    <canvas id="chart" height="500" width="1000"></canvas>
+    <script src="./dist/index.js"></script>
+    <script type="module">
+      import data from "./data.js";
+
+      let bars = data.split("|").map((item) => {
+        const [open, high, low, close, time] = item.split(",");
+        return {
+          high: high * 1,
+          open: open * 1,
+          low: low * 1,
+          close: close * 1,
+          time: time * 1,
+        };
+      });
+
+      const chart = new window.QuoteChart({ el: "#chart", bars });
+    </script>
+  </body>
+</html>
