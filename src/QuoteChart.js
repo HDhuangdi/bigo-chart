@@ -38,6 +38,8 @@ export default class QuoteChart {
   yAxisBuffer = 0.1
   // 1px 为多少y轴单位
   unitToYAxisPx = 0
+  // 坐标轴轴标签字体大小
+  axisLabelSize = 10
   // 缩放对象
   dataZoom = {}
   // 每根蜡烛的宽度
@@ -149,7 +151,7 @@ export default class QuoteChart {
   // 计算chart padding
   calcPadding (data) {
     const textWidth = this.canvasUtils.getTextWidth(
-      '20px sans-serif',
+      this.axisLabelSize * this.dpr + 'px sans-serif',
       Math.max(...data.map((item) => item.high))
     )
 
@@ -389,7 +391,7 @@ export default class QuoteChart {
       potision.x || this.padding.left + this.chartWidth + scaleHeight,
       potision.y || this.chartHeight + this.padding.top + scaleHeight,
       _value,
-      '20px sans-serif',
+      this.axisLabelSize * this.dpr + 'px sans-serif',
       potision.x ? 'top' : 'middle',
       'rgb(132, 142, 156)',
       potision.x ? 'center' : 'left'
