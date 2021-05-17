@@ -24,22 +24,22 @@
   </style>
   <body>
     <canvas id="chart" height="500" width="1000"></canvas>
-    <script src="./dist/index.js"></script>
+    <script src="../dist/index.js"></script>
     <script type="module">
-      import data from "./data.js";
+      import data from "./data.js"
 
       let bars = data.split("|").map((item) => {
-        const [open, high, low, close, time] = item.split(",");
+        const [open, high, low, close, time] = item.split(",")
         return {
           high: high * 1,
           open: open * 1,
           low: low * 1,
           close: close * 1,
           time: time * 1,
-        };
-      });
+        }
+      })
 
-      const chart = new window.QuoteChart({ el: "#chart", bars });
+      const chart = new window.QuoteChart({ el: "#chart", bars })
     </script>
   </body>
 </html>

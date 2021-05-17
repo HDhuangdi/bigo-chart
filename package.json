@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "rollup -c -w",
     "build": "rollup -c",
-    "fix": "eslint --fix src"
+    "fix": "eslint --fix src",
+    "pre-commit": "lint-staged"
   },
   "keywords": [
     "chart",
@@ -16,10 +17,6 @@
   ],
   "author": "huangdi<1013697816@qq.com>",
   "license": "MIT",
-  "prettier": {
-    "eslintIntegration": true,
-    "semi": false
-  },
   "devDependencies": {
     "@babel/core": "^7.14.2",
     "@babel/plugin-transform-runtime": "^7.14.2",
@@ -32,11 +29,23 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^4.3.1",
     "eslint-plugin-standard": "^5.0.0",
+    "husky": "^6.0.0",
+    "lint-staged": "^11.0.0",
     "rollup": "^2.48.0",
     "rollup-plugin-babel": "^4.4.0",
     "rollup-plugin-commonjs": "^10.1.0",
     "rollup-plugin-eslint": "^7.0.0",
     "rollup-plugin-node-resolve": "^5.2.0",
     "rollup-plugin-terser": "^7.0.2"
+  },
+  "prettier": {
+    "eslintIntegration": true,
+    "semi": false
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix",
+      "git add"
+    ]
   }
 }
