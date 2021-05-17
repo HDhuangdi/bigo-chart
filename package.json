@@ -42,6 +42,11 @@
     "eslintIntegration": true,
     "semi": false
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run pre-commit"
+    }
+  },
   "lint-staged": {
     "*.js": [
       "eslint --fix",
