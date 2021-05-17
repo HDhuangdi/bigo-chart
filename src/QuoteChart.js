@@ -1,5 +1,6 @@
 import canvasUtils, { dateFormat, getAVG } from "./utils.js"
 import logo from "./logo.png"
+let a
 
 export default class QuoteChart {
   options
