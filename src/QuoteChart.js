@@ -1,7 +1,5 @@
-import canvasUtils, { dateFormat, getAVG } from "./utils.js"
-import logo from "./logo.png"
-let a
-let b
+import canvasUtils, { dateFormat, getAVG } from './utils.js'
+import logo from './logo.png'
 
 export default class QuoteChart {
   options
@@ -17,7 +15,7 @@ export default class QuoteChart {
     top: 15,
     right: 80,
     bottom: 40,
-    left: 15,
+    left: 15
   }
 
   // canvas高度
@@ -59,20 +57,20 @@ export default class QuoteChart {
   // MA list
   MAOptions = [
     {
-      color: "rgb(255, 109, 0)",
-      interval: 5,
+      color: 'rgb(255, 109, 0)',
+      interval: 5
     },
     {
-      color: "rgb(38, 198, 218)",
-      interval: 10,
+      color: 'rgb(38, 198, 218)',
+      interval: 10
     },
     {
-      color: "rgb(251, 192, 45)",
-      interval: 30,
-    },
+      color: 'rgb(251, 192, 45)',
+      interval: 30
+    }
   ]
 
-  constructor(options) {
+  constructor (options) {
     this.options = options
     if (options.MA) {
       this.MAOptions = options.MA
@@ -85,19 +83,19 @@ export default class QuoteChart {
     this.calcPadding(this.bars)
     this.calcMAPoints()
     this.registerMouseEvents()
-    this.calcDataZoom("init")
+    this.calcDataZoom('init')
     this.draw()
   }
 
   /** ************** Services ****************/
 
   // 计算1像素等于多少x轴单位
-  calcUnitToXAxisPx() {
+  calcUnitToXAxisPx () {
     this.unitToXAxisPx = this.xAxisUnitsVisiable / this.chartWidth
   }
 
   // 计算1像素等于多少y轴单位
-  calcUnitToYAxisPx() {
+  calcUnitToYAxisPx () {
     // 根据chartHeight和y轴范围算出1px为多少y轴单位
     this.unitToYAxisPx =
       (this.dataZoom.yAxisEndValue - this.dataZoom.yAxisStartValue) /
@@ -105,7 +103,7 @@ export default class QuoteChart {
   }
 
   // 计算x轴所有标签的坐标
-  calcXAxisCoordinate() {
+  calcXAxisCoordinate () {
     // 每隔count个画一个刻度
     const count = 15
 
@@ -113,7 +111,7 @@ export default class QuoteChart {
     for (let index = 0; index < this.bars.length; index += count) {
       xAxisData.push({
         time: this.bars[index].time,
-        value: 0,
+        value: 0
       })
     }
 
@@ -122,14 +120,14 @@ export default class QuoteChart {
       return {
         x: res.x,
         y: 0,
-        time: data.time,
+        time: data.time
       }
     })
     return xAxisPosition
   }
 
   // 计算y轴所有标签的坐标
-  calcYAxisCoordinate() {
+  calcYAxisCoordinate () {
     const intervalValue =
       (this.dataZoom.yAxisEndValue - this.dataZoom.yAxisStartValue) /
       (this.yAxisUnitsVisiable - 1)
@@ -142,16 +140,16 @@ export default class QuoteChart {
       yAxisData.push({
         x: this.padding.left + this.chartWidth,
         y: res.y,
-        value: this.dataZoom.yAxisStartValue + index * intervalValue,
+        value: this.dataZoom.yAxisStartValue + index * intervalValue
       })
     }
     return yAxisData
   }
 
   // 计算chart padding
-  calcPadding(data) {
+  calcPadding (data) {
     const textWidth = this.canvasUtils.getTextWidth(
-      "20px sans-serif",
+      '20px sans-serif',
       Math.max(...data.map((item) => item.high))
     )
 
@@ -162,8 +160,8 @@ export default class QuoteChart {
   }
 
   // 初始化缩放对象
-  calcDataZoom(type = "update") {
-    if (type === "init") {
+  calcDataZoom (type = 'update') {
+    if (type === 'init') {
       // x
       this.dataZoom.xAxisEndValue =
         this.bars[this.bars.length - 1].time +
@@ -171,7 +169,7 @@ export default class QuoteChart {
         this.rightSideOffset * this.unitToXAxisPx
       this.dataZoom.xAxisStartValue =
         this.dataZoom.xAxisEndValue - this.xAxisUnitsVisiable
-    } else if (type === "update") {
+    } else if (type === 'update') {
       this.xAxisUnitsVisiable =
         this.dataZoom.xAxisEndValue - this.dataZoom.xAxisStartValue
     }
@@ -202,14 +200,14 @@ export default class QuoteChart {
   }
 
   // 计算MA points
-  calcMAPoints() {
+  calcMAPoints () {
     this.MAOptions.forEach(({ interval }, index, arr) => {
       const MAPoints = []
       const reduce = []
       for (let index = 0; index < this.bars.length; index++) {
         const point = {
           value: this.bars[index].close,
-          time: this.bars[index].time,
+          time: this.bars[index].time
         }
 
         reduce.push(point)
@@ -219,7 +217,7 @@ export default class QuoteChart {
               getAVG(reduce.map((item) => item.value)).toFixed(
                 this.digitNumber
               ) * 1,
-            time: point.time,
+            time: point.time
           })
           reduce.shift()
         }
@@ -229,10 +227,10 @@ export default class QuoteChart {
   }
 
   // 数据 => 坐标 映射
-  mapCoordinate(time, value) {
+  mapCoordinate (time, value) {
     const position = {
       x: 0,
-      y: 0,
+      y: 0
     }
 
     position.x =
@@ -252,10 +250,9 @@ export default class QuoteChart {
 
   /** ************** View ****************/
 
-  drawLogo() {
+  drawLogo () {
     const img = new Image()
     img.src = logo
-    //464 × 114
     const logoWidth = 464 * 1.5
     const logoHeight = 114 * 1.5
     this.ctx.drawImage(
@@ -268,7 +265,7 @@ export default class QuoteChart {
   }
 
   // 高清化
-  highDefinition() {
+  highDefinition () {
     this.dpr = window.devicePixelRatio || 1
     const rect = this.canvas.getBoundingClientRect()
 
@@ -276,22 +273,22 @@ export default class QuoteChart {
     this.canvas.height = rect.height * this.dpr
     this.canvasWidth = this.canvas.width
     this.canvasHeight = this.canvas.height
-    this.canvas.style.height = this.canvas.height / this.dpr + "px"
-    this.canvas.style.width = this.canvas.width / this.dpr + "px"
+    this.canvas.style.height = this.canvas.height / this.dpr + 'px'
+    this.canvas.style.width = this.canvas.width / this.dpr + 'px'
 
-    this.ctx = this.canvas.getContext("2d")
+    this.ctx = this.canvas.getContext('2d')
     // this.ctx.scale(this.dpr, this.dpr)
   }
 
   // 清空画布
-  clearCanvas() {
+  clearCanvas () {
     this.canvas.height = this.canvasHeight
     this.canvas.width = this.canvasWidth
   }
 
   // 绘图
-  draw() {
-    this.calcDataZoom("update")
+  draw () {
+    this.calcDataZoom('update')
     this.clearCanvas()
     this.drawLogo()
     this.drawAxis()
@@ -300,7 +297,7 @@ export default class QuoteChart {
   }
 
   // 绘制坐标轴
-  drawAxis() {
+  drawAxis () {
     // 计算单位
     this.calcUnitToXAxisPx()
     this.calcUnitToYAxisPx()
@@ -309,7 +306,7 @@ export default class QuoteChart {
   }
 
   // 绘制x轴
-  drawXAxis() {
+  drawXAxis () {
     const xAxisPosition = this.calcXAxisCoordinate()
     const scaleHeight = 5 * this.dpr
 
@@ -318,9 +315,9 @@ export default class QuoteChart {
       { x: this.padding.left, y: this.chartHeight + this.padding.top },
       {
         x: this.chartWidth + this.padding.left,
-        y: this.chartHeight + this.padding.top,
+        y: this.chartHeight + this.padding.top
       },
-      "#34383F"
+      '#34383F'
     )
 
     for (const data of xAxisPosition) {
@@ -334,13 +331,13 @@ export default class QuoteChart {
       this.canvasUtils.drawLine(
         { x, y: this.chartHeight + this.padding.top },
         { x, y: this.chartHeight + this.padding.top + scaleHeight },
-        "rgb(132, 142, 156)"
+        'rgb(132, 142, 156)'
       )
       // 绘制网格
       this.canvasUtils.drawLine(
         { x, y: this.padding.top },
         { x, y: this.chartHeight + this.padding.top },
-        "#24272C"
+        '#24272C'
       )
 
       this.drawLabels({ x, y: undefined }, scaleHeight, data.time)
@@ -348,7 +345,7 @@ export default class QuoteChart {
   }
 
   // 绘制y轴
-  drawYAxis() {
+  drawYAxis () {
     const yAxisPosition = this.calcYAxisCoordinate()
     const scaleHeight = 5 * this.dpr
 
@@ -356,33 +353,33 @@ export default class QuoteChart {
       { x: this.padding.left + this.chartWidth, y: this.padding.top },
       {
         x: this.padding.left + this.chartWidth,
-        y: this.chartHeight + this.padding.top,
+        y: this.chartHeight + this.padding.top
       },
-      "#34383F"
+      '#34383F'
     )
     yAxisPosition.forEach((data) => {
       // 绘制刻度线
       this.canvasUtils.drawLine(
         { x: this.padding.left + this.chartWidth, y: data.y },
         { x: this.chartWidth + this.padding.top + scaleHeight, y: data.y },
-        "rgb(132, 142, 156)"
+        'rgb(132, 142, 156)'
       )
       // 绘制网格
       this.canvasUtils.drawLine(
         { x: this.padding.left, y: data.y },
         { x: this.chartWidth + this.padding.left, y: data.y },
-        "#24272C"
+        '#24272C'
       )
       this.drawLabels({ x: undefined, y: data.y }, scaleHeight, data.value)
     })
   }
 
   // 绘制轴线标签
-  drawLabels(potision, scaleHeight, value) {
+  drawLabels (potision, scaleHeight, value) {
     let _value = value
     if (potision.x) {
       // x轴处理
-      _value = dateFormat("HH:MM", new Date(value))
+      _value = dateFormat('HH:MM', new Date(value))
     } else {
       // y轴处理
       _value = _value.toFixed(this.digitNumber)
@@ -392,22 +389,22 @@ export default class QuoteChart {
       potision.x || this.padding.left + this.chartWidth + scaleHeight,
       potision.y || this.chartHeight + this.padding.top + scaleHeight,
       _value,
-      "20px sans-serif",
-      potision.x ? "top" : "middle",
-      "rgb(132, 142, 156)",
-      potision.x ? "center" : "left"
+      '20px sans-serif',
+      potision.x ? 'top' : 'middle',
+      'rgb(132, 142, 156)',
+      potision.x ? 'center' : 'left'
     )
   }
 
   // 绘制蜡烛图
-  drawCandles() {
+  drawCandles () {
     this.dataZoom.data.forEach((candleData, index) =>
       this.drawCandle(candleData, index)
     )
   }
 
   // 绘制单根蜡烛
-  drawCandle(candleData, index) {
+  drawCandle (candleData, index) {
     const openPosition = this.mapCoordinate(candleData.time, candleData.open)
     const closePosition = this.mapCoordinate(candleData.time, candleData.close)
     const highPosition = this.mapCoordinate(candleData.time, candleData.high)
@@ -415,12 +412,12 @@ export default class QuoteChart {
     this.candleMargin = 5000 / this.unitToXAxisPx // 蜡烛间距为 5 秒的宽度
     this.candleWidth = 60000 / this.unitToXAxisPx - 2 * this.candleMargin
 
-    const status = candleData.close >= candleData.open ? "up" : "down"
+    const status = candleData.close >= candleData.open ? 'up' : 'down'
     let x =
-      status === "up"
+      status === 'up'
         ? closePosition.x - this.candleWidth / 2
         : openPosition.x - this.candleWidth / 2
-    const y = status === "up" ? closePosition.y : openPosition.y
+    const y = status === 'up' ? closePosition.y : openPosition.y
     const height = Math.abs(closePosition.y - openPosition.y)
     let width = this.candleWidth
 
@@ -443,7 +440,7 @@ export default class QuoteChart {
       this.canvasUtils.drawLine(
         { x: openPosition.x, y: highPosition.y },
         { x: openPosition.x, y: lowPosition.y },
-        status === "up" ? "#04BD75" : "#CF304A"
+        status === 'up' ? '#04BD75' : '#CF304A'
       )
     }
 
@@ -453,12 +450,12 @@ export default class QuoteChart {
       y,
       width,
       height,
-      status === "up" ? "#04BD75" : "#CF304A"
+      status === 'up' ? '#04BD75' : '#CF304A'
     )
   }
 
   // 绘制MA线
-  drawMAs() {
+  drawMAs () {
     this.MAOptions.forEach((option) => {
       const MAPoints = option.points
       const MAPointsPositions = MAPoints.map((point) =>
@@ -493,21 +490,21 @@ export default class QuoteChart {
   /** ************** Controller ****************/
 
   // 注册事件
-  registerMouseEvents() {
-    this.canvas.addEventListener("mousedown", this.onMouseDown.bind(this))
-    this.canvas.addEventListener("mousemove", this.onMouseMove.bind(this))
-    this.canvas.addEventListener("mouseup", this.onMouseUp.bind(this))
-    this.canvas.addEventListener("mousewheel", this.onMouseWeel.bind(this))
+  registerMouseEvents () {
+    this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this))
+    this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this))
+    this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this))
+    this.canvas.addEventListener('mousewheel', this.onMouseWeel.bind(this))
   }
 
   // 鼠标点击事件
-  onMouseDown(e) {
+  onMouseDown (e) {
     this.isMouseDown = true
     this.prevMousePosition = { x: e.offsetX, y: e.offsetY }
   }
 
   // 鼠标移动事件
-  onMouseMove(e) {
+  onMouseMove (e) {
     if (!this.isMouseDown) return
     this.nowMousePosition = { x: e.offsetX, y: e.offsetY }
     const diffX = this.prevMousePosition.x - this.nowMousePosition.x
@@ -537,14 +534,14 @@ export default class QuoteChart {
   }
 
   // 鼠标抬起事件
-  onMouseUp(e) {
+  onMouseUp (e) {
     this.isMouseDown = false
     this.prevMousePosition = {}
     this.nowMousePosition = {}
   }
 
   // 滚轮事件
-  onMouseWeel(e) {
+  onMouseWeel (e) {
     let delta
     if (e.wheelDelta) {
       // IE、chrome浏览器使用的是wheelDelta，并且值为“正负120”
@@ -570,7 +567,7 @@ export default class QuoteChart {
   }
 
   // 订阅数据
-  subscribeBars(value, time) {
+  subscribeBars (value, time) {
     // 1621092420000
     const lastCandle = this.bars[this.bars.length - 1]
 
@@ -579,7 +576,7 @@ export default class QuoteChart {
       high: lastCandle.high,
       low: lastCandle.low,
       open: lastCandle.open,
-      time: lastCandle.time,
+      time: lastCandle.time
     }
     if (time - lastCandle.time >= this.klineUnit) {
       // new
