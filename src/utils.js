@@ -22,7 +22,6 @@ export default function canvasUtils (ctx) {
 
   function drawText (x, y, text, fontStyle, baseLine, color, align) {
     ctx.font = fontStyle
-    console.log(fontStyle)
     ctx.textBaseline = baseLine
     ctx.textAlign = align
     ctx.fillStyle = color

@@ -7,17 +7,12 @@ export default class QuoteChart {
   canvas
   ctx
   dpr
+  logo
   canvasUtils
   // k线单位,一根k线为多少时间
   klineUnit
   // canvas内边距
-  padding = {
-    top: 15,
-    right: 80,
-    bottom: 40,
-    left: 15
-  }
-
+  padding = {}
   // canvas高度
   canvasHeight
   // canvas宽度
@@ -74,6 +69,8 @@ export default class QuoteChart {
 
   constructor (options) {
     this.options = options
+    this.logo = new Image()
+    this.logo.src = options.logo || logo
     if (options.MA) {
       this.MAOptions = options.MA
     }
@@ -154,8 +151,11 @@ export default class QuoteChart {
       this.axisLabelSize * this.dpr + 'px sans-serif',
       Math.max(...data.map((item) => item.high))
     )
+    this.padding.top = 15 * this.dpr
+    this.padding.bottom = 20 * this.dpr
+    this.padding.left = 15 * this.dpr
 
-    this.padding.right = textWidth + 20 * this.dpr /** 为了美观 20px 冗余 */
+    this.padding.right = textWidth + 10 * this.dpr /** 为了美观 10px 冗余 */
     this.chartHeight =
       this.canvasHeight - this.padding.top - this.padding.bottom
     this.chartWidth = this.canvasWidth - this.padding.left - this.padding.right
@@ -251,21 +251,6 @@ export default class QuoteChart {
   }
 
   /** ************** View ****************/
-
-  drawLogo () {
-    const img = new Image()
-    img.src = logo
-    const logoWidth = 464 * 1.5
-    const logoHeight = 114 * 1.5
-    this.ctx.drawImage(
-      img,
-      this.canvasWidth / 2 - logoWidth / 2,
-      this.canvasHeight / 2 - logoHeight / 2,
-      logoWidth,
-      logoHeight
-    )
-  }
-
   // 高清化
   highDefinition () {
     this.dpr = window.devicePixelRatio || 1
@@ -279,7 +264,19 @@ export default class QuoteChart {
     this.canvas.style.width = this.canvas.width / this.dpr + 'px'
 
     this.ctx = this.canvas.getContext('2d')
-    // this.ctx.scale(this.dpr, this.dpr)
+  }
+
+  // 绘制logo
+  drawLogo () {
+    const logoWidth = 464 * 0.75 * this.dpr
+    const logoHeight = 114 * 0.75 * this.dpr
+    this.ctx.drawImage(
+      this.logo,
+      this.canvasWidth / 2 - logoWidth / 2,
+      this.canvasHeight / 2 - logoHeight / 2,
+      logoWidth,
+      logoHeight
+    )
   }
 
   // 清空画布
@@ -292,7 +289,14 @@ export default class QuoteChart {
   draw () {
     this.calcDataZoom('update')
     this.clearCanvas()
-    this.drawLogo()
+    // 图片的特殊处理
+    if (this.logo.complete) {
+      this.drawLogo()
+    } else {
+      this.logo.onload = () => {
+        this.drawLogo()
+      }
+    }
     this.drawAxis()
     this.drawMAs()
     this.drawCandles()
