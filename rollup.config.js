@@ -6,7 +6,7 @@ import { terser } from "rollup-plugin-terser"
 import { eslint } from "rollup-plugin-eslint"
 
 export default {
-  input: "src/QuoteChart.js",
+  input: "src/Chart.js",
   output: [
     { file: "dist/index.js", format: "iife", name: "QuoteChart" },
     { file: "dist/index.esm.js", format: "esm" },

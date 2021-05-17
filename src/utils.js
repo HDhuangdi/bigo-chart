@@ -1,8 +1,15 @@
 export default function canvasUtils (ctx) {
-  function drawLine (startPosition, endPosition, color = '#fff', close = true) {
+  function drawLine (
+    startPosition,
+    endPosition,
+    color = '#fff',
+    close = true,
+    dash = [0, 0]
+  ) {
     if (close) {
       ctx.beginPath()
     }
+    ctx.setLineDash(dash)
     ctx.moveTo(startPosition.x, startPosition.y)
     ctx.lineTo(endPosition.x, endPosition.y)
     ctx.strokeStyle = color
@@ -28,16 +35,19 @@ export default function canvasUtils (ctx) {
     ctx.fillText(text, x, y)
   }
 
-  function getTextWidth (fontStyle, text) {
-    ctx.font = fontStyle
-    return ctx.measureText(text).width
+  function getTextWidthAndHeight (fontSize, fontStyle, text) {
+    ctx.font = fontSize + 'px ' + fontStyle
+    return {
+      width: ctx.measureText(text).width,
+      height: fontSize
+    }
   }
 
   return {
     drawLine,
     drawRect,
     drawText,
-    getTextWidth
+    getTextWidthAndHeight
   }
 }
 
