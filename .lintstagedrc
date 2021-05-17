@@ -1,5 +1,5 @@
 {
-  "!(dist/)*.js": [
+  "src/*.js": [
     "eslint --fix src",
     "git add"
   ]
