@@ -212,8 +212,9 @@ export default class View {
       candleData.time,
       candleData.low
     )
-    chart.candleMargin = 5000 / chart.unitToXAxisPx // 蜡烛间距为 5 秒的宽度
-    chart.candleWidth = 60000 / chart.unitToXAxisPx - 2 * chart.candleMargin
+    chart.candleMargin = chart.klineUnit / 20 / chart.unitToXAxisPx // 蜡烛间距为 1/20 k线单位所对应的宽度
+    chart.candleWidth =
+      chart.klineUnit / chart.unitToXAxisPx - 2 * chart.candleMargin
 
     const status = candleData.close >= candleData.open ? 'up' : 'down'
     let x =
