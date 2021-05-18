@@ -97,7 +97,6 @@ export default class QuoteChart {
 
     this.view.highDefinition()
     this.service.calcPadding(this.bars)
-    this.service.calcMAPoints()
     this.controller.registerMouseEvents()
     this.service.calcDataZoom('init')
     this.view.draw()
@@ -108,5 +107,35 @@ export default class QuoteChart {
     this.service.inject(this.view, this.controller, this)
     this.controller.inject(this.view, this.service, this)
     this.view.inject(this.service, this.controller, this)
+  }
+
+  // 订阅数据
+  subscribeBars (value, volume, time) {
+    const lastCandle = this.bars[this.bars.length - 1]
+    const candleToUpdate = {
+      open: lastCandle.open,
+      high: lastCandle.high,
+      low: lastCandle.low,
+      close: value,
+      volume,
+      time: lastCandle.time
+    }
+    if (time - lastCandle.time >= this.klineUnit) {
+      candleToUpdate.open = lastCandle.close
+      candleToUpdate.high = value
+      candleToUpdate.low = value
+      candleToUpdate.time = time
+      this.bars.push(candleToUpdate)
+    } else {
+      if (value > lastCandle.high) {
+        candleToUpdate.high = value
+      }
+      if (value < lastCandle.low) {
+        candleToUpdate.low = value
+      }
+      this.bars[this.bars.length - 1] = candleToUpdate
+    }
+
+    this.view.draw()
   }
 }

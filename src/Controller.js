@@ -29,14 +29,14 @@ export default class Controller {
 
   // 鼠标移动事件
   onMouseMove (e) {
-    const chart = this.chart
-    const view = this.view
+    const { chart, view, service } = this
 
-    // 绘制鼠标十字线
-    view.drawCursorCross(e.offsetX, e.offsetY)
+    const x = e.offsetX
+    const y = e.offsetY
 
-    if (!chart.isMouseDown) return
-    chart.nowMousePosition = { x: e.offsetX, y: e.offsetY }
+    chart.nowMousePosition = { x, y }
+    // 绘制
+    if (!chart.isMouseDown) return view.draw()
     const diffX = chart.prevMousePosition.x - chart.nowMousePosition.x
     const lastCandleTime = chart.bars[chart.bars.length - 1].time
     const firstCandleTime = chart.bars[0].time
@@ -47,29 +47,31 @@ export default class Controller {
 
     // 更新拖动系数
     chart.dragCoefficient = (chart.xAxisUnitsVisiable / chart.klineUnit) * 40
-    // 边界处理  分页  4个K线单位冗余
-    if (newDataZoomXAxisStartValue + 20 * chart.klineUnit >= lastCandleTime) {
-      return
-    }
-    if (newDataZoomXAxisEndValue - 20 * chart.klineUnit <= firstCandleTime) {
-      // 分页
+    // 边界处理
+    if (
+      lastCandleTime < newDataZoomXAxisStartValue ||
+      firstCandleTime > newDataZoomXAxisEndValue
+    ) {
       return
     }
 
     chart.dataZoom.xAxisStartValue = newDataZoomXAxisStartValue
     chart.dataZoom.xAxisEndValue = newDataZoomXAxisEndValue
 
+    // 分页 提前20个k线单位开始请求
+    if (newDataZoomXAxisStartValue - 20 * chart.klineUnit <= firstCandleTime) {
+      service.loadMoreData()
+      return
+    }
+
     view.draw()
-    chart.prevMousePosition = { x: e.offsetX, y: e.offsetY }
+    chart.prevMousePosition = { x, y }
   }
 
   // 鼠标抬起事件
-  onMouseUp (e) {
+  onMouseUp () {
     const chart = this.chart
-
     chart.isMouseDown = false
-    chart.prevMousePosition = {}
-    chart.nowMousePosition = {}
   }
 
   // 滚轮事件
@@ -101,39 +103,6 @@ export default class Controller {
       chart.dataZoom.xAxisEndValue = chart.dataZoom.xAxisEndValue + 1000 * 120
     }
     service.calcDataZoom()
-    view.draw()
-  }
-
-  // 订阅数据
-  subscribeBars (value, time) {
-    const chart = this.chart
-    const view = this.view
-
-    // 1621092420000
-    const lastCandle = chart.bars[chart.bars.length - 1]
-
-    const candleTpUpdate = {
-      close: lastCandle.close,
-      high: lastCandle.high,
-      low: lastCandle.low,
-      open: lastCandle.open,
-      time: lastCandle.time
-    }
-    if (time - lastCandle.time >= chart.klineUnit) {
-      // new
-      candleTpUpdate.close = value
-      candleTpUpdate.open = lastCandle.close
-      candleTpUpdate.high = value
-      candleTpUpdate.low = value
-      candleTpUpdate.time = time
-      chart.bars.push(candleTpUpdate)
-    } else {
-      // update
-      candleTpUpdate.close = value
-      candleTpUpdate.time = time
-      chart.bars[chart.bars.length - 1] = candleTpUpdate
-    }
-
     view.draw()
   }
 }

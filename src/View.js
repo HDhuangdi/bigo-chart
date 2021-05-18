@@ -67,6 +67,8 @@ export default class View {
     this.drawAxis()
     this.drawMAs()
     this.drawCandles()
+    this.drawLastCandlePriceLine()
+    this.drawCursorCross(chart.nowMousePosition.x, chart.nowMousePosition.y)
   }
 
   // 绘制坐标轴
@@ -186,13 +188,13 @@ export default class View {
 
   // 绘制蜡烛图
   drawCandles () {
-    this.chart.dataZoom.data.forEach((candleData, index) =>
+    this.chart.dataZoom.data.forEach((candleData, index) => {
       this.drawCandle(candleData, index)
-    )
+    })
   }
 
   // 绘制单根蜡烛
-  drawCandle (candleData) {
+  drawCandle (candleData, index) {
     const service = this.service
     const chart = this.chart
 
@@ -262,6 +264,7 @@ export default class View {
   drawMAs () {
     const service = this.service
     const chart = this.chart
+    service.calcMAPoints()
 
     chart.MAOptions.forEach((option) => {
       const MAPoints = option.points
@@ -296,11 +299,11 @@ export default class View {
 
   // 绘制鼠标十字线
   drawCursorCross (cursorX, cursorY) {
+    if (!cursorX || !cursorY) return
     const chart = this.chart
 
     let x = chart.dpr * cursorX
     const y = chart.dpr * cursorY
-    this.draw()
 
     // 边界情况
     if (
@@ -318,7 +321,7 @@ export default class View {
     chart.canvasUtils.drawLine(
       { x: chart.padding.left, y },
       { x: chart.padding.left + chart.chartWidth, y },
-      '#fff',
+      '#AEB4BC',
       true,
       [10, 10]
     )
@@ -326,7 +329,7 @@ export default class View {
     chart.canvasUtils.drawLine(
       { x, y: chart.padding.top },
       { x, y: chart.padding.top + chart.chartHeight },
-      '#fff',
+      '#AEB4BC',
       true,
       [10, 10]
     )
@@ -338,7 +341,7 @@ export default class View {
     const service = this.service
 
     // 鼠标所指的坐标映射
-    const { time: cursorTime } = service.mapCoordinateToData(
+    const { time: cursorTime, value } = service.mapCoordinateToData(
       x - chart.padding.left,
       y - chart.padding.top
     )
@@ -369,18 +372,18 @@ export default class View {
         formatedTime
       )
     const reactWidth = textWidth + 15 * chart.dpr
-    const reactHeight = chart.padding.bottom
+    const xReactHeight = chart.padding.bottom
     chart.canvasUtils.drawRect(
       res.x - reactWidth / 2,
       chart.chartHeight + chart.padding.top,
       reactWidth,
-      reactHeight,
+      xReactHeight,
       '#2B2F36'
     )
 
     chart.canvasUtils.drawText(
       res.x,
-      chart.chartHeight + chart.padding.top + reactHeight / 2 - textHeight / 2,
+      chart.chartHeight + chart.padding.top + xReactHeight / 2 - textHeight / 2,
       formatedTime,
       chart.axisLabelSize * chart.dpr + 'px sans-serif',
       'top',
@@ -388,6 +391,66 @@ export default class View {
       'center'
     )
 
+    // 绘制y轴多边形及文字
+    this.drawYAxisLabelPolygon(y, '#2B2F36', '#3D434C', value)
+
     return res.x
+  }
+
+  // 绘制y轴多边形及文字
+  drawYAxisLabelPolygon (y, fillStyle, strokeStyle, text) {
+    const chart = this.chart
+
+    const yReactHeight = 20 * chart.dpr
+    const yReactWidth = chart.padding.right
+    // y轴标签外面的箭头形状所对应的坐标
+    const points = [
+      {
+        x: chart.padding.left + chart.chartWidth,
+        y
+      },
+      {
+        x: chart.padding.left + chart.chartWidth + yReactWidth / 6,
+        y: y - yReactHeight / 2
+      },
+      {
+        x: chart.padding.left + chart.chartWidth + yReactWidth,
+        y: y - yReactHeight / 2
+      },
+      {
+        x: chart.padding.left + chart.chartWidth + yReactWidth,
+        y: y + yReactHeight / 2
+      },
+      {
+        x: chart.padding.left + chart.chartWidth + yReactWidth / 6,
+        y: y + yReactHeight / 2
+      }
+    ]
+    chart.canvasUtils.drawPolygon(points, 'fill', fillStyle)
+    chart.canvasUtils.drawPolygon(points, 'stroke', strokeStyle)
+    chart.canvasUtils.drawText(
+      chart.padding.left + chart.chartWidth + chart.scaleHeight,
+      y,
+      text,
+      12 * chart.dpr + 'px ',
+      'middle',
+      '#fff',
+      'left'
+    )
+  }
+
+  // 绘制屏幕中最后一根k线的水平线
+  drawLastCandlePriceLine () {
+    const chart = this.chart
+    const service = this.service
+    const lastCandle = chart.dataZoom.data[chart.dataZoom.data.length - 1]
+    const { y } = service.mapDataToCoordinate(lastCandle.time, lastCandle.close)
+    const status = lastCandle.close >= lastCandle.open ? 'up' : 'down'
+    this.drawYAxisLabelPolygon(
+      y,
+      status === 'up' ? '#027F57' : '#A71F3A',
+      status === 'up' ? '##03A46B' : '#C02944',
+      lastCandle.close
+    )
   }
 }

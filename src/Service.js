@@ -111,13 +111,12 @@ export default class Service {
         chart.dataZoom.xAxisEndValue - chart.dataZoom.xAxisStartValue
     }
 
-    // data  前后多拿一个
+    // data  是否需要前后多拿一个?
     chart.dataZoom.data = chart.bars.filter(
       (bar) =>
-        bar.time <= chart.dataZoom.xAxisEndValue + chart.klineUnit &&
-        bar.time >= chart.dataZoom.xAxisStartValue - chart.klineUnit
+        bar.time <= chart.dataZoom.xAxisEndValue &&
+        bar.time >= chart.dataZoom.xAxisStartValue
     )
-
     // y
     const sortedData = Array.prototype
       .concat([], chart.dataZoom.data)
@@ -165,6 +164,24 @@ export default class Service {
     })
   }
 
+  // 分页逻辑
+  async loadMoreData () {
+    const { chart, view } = this
+
+    if (chart.loadMorePending) return
+
+    const firstCandleTime = chart.bars[0].time
+
+    if (chart.options.loadMore) {
+      chart.loadMorePending = true
+      const newbars = await chart.options.loadMore(firstCandleTime)
+      if (!newbars) return
+      chart.loadMorePending = false
+      chart.bars = newbars.concat(chart.bars)
+      view.draw()
+    }
+  }
+
   // 数据 => 坐标 映射
   mapDataToCoordinate (time, value) {
     const chart = this.chart
@@ -203,10 +220,11 @@ export default class Service {
     data.time = Math.floor(
       chart.dataZoom.xAxisStartValue + x * chart.unitToXAxisPx
     )
-    data.value = Math.floor(
-      chart.dataZoom.yAxisStartValue +
+    data.value =
+      (
+        chart.dataZoom.yAxisStartValue +
         (chart.chartHeight - y) * chart.unitToYAxisPx
-    )
+      ).toFixed(chart.digitNumber) * 1
     return data
   }
 }

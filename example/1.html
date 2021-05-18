@@ -25,22 +25,76 @@
   </style>
   <body>
     <canvas id="chart" height="500" width="1000"></canvas>
+    <script src="./axios.js"></script>
+    <script src="./md5.js"></script>
+    <script src="./signApi.js"></script>
     <script src="../dist/index.js"></script>
     <script type="module">
-      import data from "./data.js"
+      let page = 1
+      let size = 350
+      let data
 
-      let bars = data.split("|").map((item) => {
-        const [open, high, low, close, time] = item.split(",")
-        return {
-          high: high * 1,
-          open: open * 1,
-          low: low * 1,
-          close: close * 1,
-          time: time * 1,
+      function getData(size, page) {
+        let now = new Date().getTime()
+        return axios.get(
+          `http://m.devbbtest.com/kline/ethusdt/1.htm?time=&size=${size}&page=${page}&_=${now}&_version=20210423&_s=${MD5(
+            `?time=&size=${size}&page=${page}&_=${now}&_version=20210423`
+          )}`
+        )
+      }
+
+      getData(size, page).then((res) => {
+        data = res.data
+        let bars = data.split("|").map((item) => {
+          const [open, high, low, close, time] = item.split(",")
+          return {
+            high: high * 1,
+            open: open * 1,
+            low: low * 1,
+            close: close * 1,
+            time: time * 1,
+          }
+        })
+        const chart = new window.QuoteChart({
+          el: "#chart",
+          bars,
+          loadMore: async () => {
+            page++
+            let { data: newData } = await getData(size, page)
+            newData = newData.split("|").map((item) => {
+              const [open, high, low, close, time] = item.split(",")
+              return {
+                high: high * 1,
+                open: open * 1,
+                low: low * 1,
+                close: close * 1,
+                time: time * 1,
+              }
+            })
+            return newData
+          },
+        })
+
+        const msg = JSON.stringify({
+          sub: "add",
+          type: "five",
+          topic: "ETH/USDT",
+        })
+
+        const ws = new WebSocket(
+          `ws://47.242.25.96:10000/websocket/quote?_=${Date.now()}` +
+            "&_s=" +
+            MD5(`ws://47.242.25.96:10000/websocket/quote?_=${Date.now()}`)
+        )
+        ws.onopen = () => {
+          ws.send(msg)
+        }
+        ws.onmessage = (e) => {
+          if (e.data === "ok") return
+          let data = JSON.parse(e.data)
+          chart.subscribeBars(data.data.price * 1, 0, data.data.time * 1)
         }
       })
-
-      const chart = new window.QuoteChart({ el: "#chart", bars })
     </script>
   </body>
 </html>

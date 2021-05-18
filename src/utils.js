@@ -27,6 +27,22 @@ export default function canvasUtils (ctx) {
     ctx.fill()
   }
 
+  function drawPolygon (pointsList, type, color) {
+    ctx.beginPath()
+    ctx.lineWidth = 3
+    ctx.moveTo(pointsList[0].x, pointsList[0].y)
+    pointsList.forEach((point, index) => {
+      if (index >= 1) {
+        ctx.lineTo(point.x, point.y)
+      }
+    })
+    ctx.lineTo(pointsList[0].x, pointsList[0].y)
+
+    ctx[type + 'Style'] = color
+    ctx.closePath()
+    ctx[type]()
+  }
+
   function drawText (x, y, text, fontStyle, baseLine, color, align) {
     ctx.font = fontStyle
     ctx.textBaseline = baseLine
@@ -46,6 +62,7 @@ export default function canvasUtils (ctx) {
   return {
     drawLine,
     drawRect,
+    drawPolygon,
     drawText,
     getTextWidthAndHeight
   }
