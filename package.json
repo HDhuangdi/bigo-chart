@@ -17,7 +17,7 @@
   ],
   "author": "huangdi<1013697816@qq.com>",
   "license": "MIT",
-  "devDependencies": {
+  "dependencies": {
     "@babel/core": "^7.14.2",
     "@babel/plugin-transform-runtime": "^7.14.2",
     "@babel/preset-env": "^7.14.2",
@@ -31,6 +31,7 @@
     "eslint-plugin-standard": "^5.0.0",
     "husky": "^6.0.0",
     "lint-staged": "^11.0.0",
+    "postcss": "^8.2.15",
     "rollup": "^2.48.0",
     "rollup-plugin-babel": "^4.4.0",
     "rollup-plugin-commonjs": "^10.1.0",
@@ -46,5 +47,8 @@
     "hooks": {
       "pre-commit": "npm run pre-commit"
     }
+  },
+  "devDependencies": {
+    "rollup-plugin-postcss": "^4.0.0"
   }
 }

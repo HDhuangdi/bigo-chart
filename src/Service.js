@@ -161,10 +161,10 @@ export default class Service {
     chart.MAOptions.forEach(({ interval }, index, arr) => {
       const MAPoints = []
       const reduce = []
-      for (let index = 0; index < chart.MAOptions.data.length; index++) {
+      for (let index = 0; index < chart.MAData.length; index++) {
         const point = {
-          value: chart.MAOptions.data[index].close,
-          time: chart.MAOptions.data[index].time
+          value: chart.MAData[index].close,
+          time: chart.MAData[index].time
         }
         reduce.push(point)
         if (index >= interval - 1) {
@@ -185,7 +185,7 @@ export default class Service {
   // 计算当前屏幕上需要显示完全的MA线所需截取bars的范围
   calcMAList () {
     const chart = this.chart
-    chart.MAOptions.data = chart.bars.filter(
+    chart.MAData = chart.bars.filter(
       (bar) =>
         bar.time <=
           chart.dataZoom.xAxisEndValue +
@@ -193,6 +193,18 @@ export default class Service {
         bar.time >=
           chart.dataZoom.xAxisStartValue - chart.maxMAInterval * chart.klineUnit
     )
+  }
+
+  // 格式化k线数据
+  formatKlineData (kline) {
+    // 状态
+    kline.status = kline.close >= kline.open ? 'up' : 'down'
+    // 振幅
+    kline.amplitude =
+      (((kline.high - kline.low) * 100) / kline.low).toFixed(2) + '%'
+    // 涨跌幅
+    kline.change =
+      (((kline.close - kline.high) * 100) / kline.low).toFixed(2) + '%'
   }
 
   // 分页逻辑

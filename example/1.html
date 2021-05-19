@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>trade-chart demo</title>
   </head>
+  <link rel="stylesheet" type="text/css" href="../dist/chart.css" />
   <style>
     * {
       padding: 0;
@@ -19,11 +20,13 @@
     #chart {
       position: absolute;
       left: 50%;
+      height: 500px;
+      width: 1000px;
       transform: translate(-50%);
     }
   </style>
   <body>
-    <canvas id="chart" height="500" width="1000"></canvas>
+    <div id="chart"></div>
     <script src="./axios.js"></script>
     <script src="./md5.js"></script>
     <script src="./signApi.js"></script>

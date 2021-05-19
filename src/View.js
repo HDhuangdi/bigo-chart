@@ -1,3 +1,5 @@
+import Color from './Color.js'
+import Constant from './Constant.js'
 import { dateFormat } from './utils.js'
 
 export default class View {
@@ -9,6 +11,122 @@ export default class View {
     this.service = service
     this.controller = controller
     this.chart = chart
+  }
+
+  // 创建并添加canvas
+  createElements () {
+    const { chart } = this
+
+    chart.domUtils.setStyle(chart.container, { position: 'relative' })
+    const box = chart.container.getBoundingClientRect()
+    // canvas
+    const height = box.height
+    const width = box.width
+    chart.canvas = chart.domUtils.createElm('canvas', {
+      id: Constant.CANVAS_ID,
+      height,
+      width
+    })
+    chart.domUtils.appendElms(chart.canvas)
+
+    // candle info
+    const candleInfo = chart.domUtils.createElm('div', {
+      id: Constant.CANDLE_INFO_CONTAINER_ID
+    })
+    chart.domUtils.appendElms(candleInfo, chart.container)
+    // time
+    const timeSpan = chart.domUtils.createElm('span', {
+      id: Constant.TIME_SPAN_ID
+    })
+    timeSpan.innerHTML = 'N/A'
+    // open
+    const openSpan = chart.domUtils.createElm('span', {
+      id: Constant.OPEN_SPAN_ID
+    })
+    openSpan.innerHTML = 'O:'
+    const openValue = chart.domUtils.createElm('span', {
+      id: Constant.OPEN_VALUE_ID
+    })
+    openValue.innerHTML = 'N/A'
+    // high
+    const highSpan = chart.domUtils.createElm('span', {
+      id: Constant.HIGH_SPAN_ID
+    })
+    highSpan.innerHTML = 'H:'
+    const highValue = chart.domUtils.createElm('span', {
+      id: Constant.HIGH_VALUE_ID
+    })
+    highValue.innerHTML = 'N/A'
+    // low
+    const lowSpan = chart.domUtils.createElm('span', {
+      id: Constant.LOW_SPAN_ID
+    })
+    lowSpan.innerHTML = 'L:'
+    const lowValue = chart.domUtils.createElm('span', {
+      id: Constant.LOW_VALUE_ID
+    })
+    lowValue.innerHTML = 'N/A'
+    // close
+    const closeSpan = chart.domUtils.createElm('span', {
+      id: Constant.CLOSE_SPAN_ID
+    })
+    closeSpan.innerHTML = 'C:'
+    const closeValue = chart.domUtils.createElm('span', {
+      id: Constant.CLOSE_VALUE_ID
+    })
+    closeValue.innerHTML = 'N/A'
+    // change
+    const changeSpan = chart.domUtils.createElm('span', {
+      id: Constant.CHANGE_SPAN_ID
+    })
+    changeSpan.innerHTML = 'CHANGE:'
+    const changeValue = chart.domUtils.createElm('span', {
+      id: Constant.CHANGE_VALUE_ID
+    })
+    changeValue.innerHTML = 'N/A'
+    // amplitude
+    const amplitudeSpan = chart.domUtils.createElm('span', {
+      id: Constant.AMPLITUDE_SPAN_ID
+    })
+    amplitudeSpan.innerHTML = 'AMPLITUDE:'
+    const amplitudeValue = chart.domUtils.createElm('span', {
+      id: Constant.AMPLITUDE_VALUE_ID
+    })
+    amplitudeValue.innerHTML = 'N/A'
+
+    chart.domUtils.appendElms(timeSpan, candleInfo)
+    chart.domUtils.appendElms(openSpan, candleInfo)
+    chart.domUtils.appendElms(openValue, candleInfo)
+    chart.domUtils.appendElms(highSpan, candleInfo)
+    chart.domUtils.appendElms(highValue, candleInfo)
+    chart.domUtils.appendElms(lowSpan, candleInfo)
+    chart.domUtils.appendElms(lowValue, candleInfo)
+    chart.domUtils.appendElms(lowValue, candleInfo)
+    chart.domUtils.appendElms(closeSpan, candleInfo)
+    chart.domUtils.appendElms(closeValue, candleInfo)
+    chart.domUtils.appendElms(changeSpan, candleInfo)
+    chart.domUtils.appendElms(changeValue, candleInfo)
+    chart.domUtils.appendElms(amplitudeSpan, candleInfo)
+    chart.domUtils.appendElms(amplitudeValue, candleInfo)
+    // MA info
+    const MAInfo = chart.domUtils.createElm('div', {
+      id: Constant.MA_INFO_CONTAINER_ID
+    })
+
+    // MAs
+    chart.MAOptions.forEach((option) => {
+      const span = chart.domUtils.createElm('span')
+      span.innerHTML = `MA(${option.interval}):`
+      chart.domUtils.appendElms(span, MAInfo)
+
+      const value = chart.domUtils.createElm('span', {
+        id: `__ma-${option.interval}__`,
+        style: `color:${option.color}`
+      })
+      value.innerHTML = 'N/A'
+      chart.domUtils.appendElms(value, MAInfo)
+    })
+    chart.domUtils.appendElms(MAInfo, chart.container)
   }
 
   // 高清化
@@ -29,7 +147,9 @@ export default class View {
   // 清空画布
   clearCanvas () {
     const chart = this.chart
-    chart.ctx.clearRect(0, 0, chart.canvasWidth, chart.canvasHeight)
+
+    chart.canvas.width = chart.canvasWidth
+    chart.canvas.height = chart.canvasHeight
   }
 
   // 绘制logo
@@ -67,6 +187,7 @@ export default class View {
     this.drawAxis()
     this.drawMAs()
     this.drawCandles()
+    this.drawKlineInfo()
     this.drawLastCandlePriceLine()
     this.drawCursorCross(chart.nowMousePosition.x, chart.nowMousePosition.y)
   }
@@ -207,6 +328,11 @@ export default class View {
     const service = this.service
     const chart = this.chart
 
+    // 格式化k线数据
+    service.formatKlineData(candleData)
+
+    const status = candleData.status
+
     const openPosition = service.mapDataToCoordinate(
       candleData.time,
       candleData.open
@@ -227,7 +353,6 @@ export default class View {
     chart.candleWidth =
       chart.klineUnit / chart.unitToXAxisPx - 2 * chart.candleMargin
 
-    const status = candleData.close >= candleData.open ? 'up' : 'down'
     let x =
       status === 'up'
         ? closePosition.x - chart.candleWidth / 2
@@ -255,18 +380,12 @@ export default class View {
       chart.canvasUtils.drawLine(
         { x: openPosition.x, y: highPosition.y },
         { x: openPosition.x, y: lowPosition.y },
-        status === 'up' ? '#04BD75' : '#CF304A'
+        Color[status]
       )
     }
 
     // 绘制蜡烛矩形部分
-    chart.canvasUtils.drawRect(
-      x,
-      y,
-      width,
-      height,
-      status === 'up' ? '#04BD75' : '#CF304A'
-    )
+    chart.canvasUtils.drawRect(x, y, width, height, Color[status])
   }
 
   // 绘制MA线
@@ -310,6 +429,68 @@ export default class View {
       }
       chart.ctx.stroke()
     })
+  }
+
+  // 绘制当前K线信息
+  drawKlineInfo () {
+    const { chart } = this
+    const currKline = chart.cursorKline || chart.bars[chart.bars.length - 1]
+    this.drawCandleInfo(currKline)
+    const MAInfo = {}
+    for (const option of chart.MAOptions) {
+      MAInfo[option.interval] = option.points.find(
+        (point) => point.time === currKline.time
+      )
+      if (!MAInfo[option.interval]) return
+      MAInfo[option.interval].color = option.color
+    }
+
+    this.drawMAInfo(MAInfo)
+  }
+
+  // 绘制蜡烛信息
+  drawCandleInfo (info) {
+    const { chart } = this
+    const { domUtils } = chart
+
+    // time
+    const timeSpan = chart.domUtils.getDOMElm('#' + Constant.TIME_SPAN_ID)
+    timeSpan.innerHTML = dateFormat('YYYY/mm/dd HH:MM', new Date(info.time))
+    // open
+    const openValue = chart.domUtils.getDOMElm('#' + Constant.OPEN_VALUE_ID)
+    openValue.innerHTML = info.open
+    domUtils.setStyle(openValue, { color: Color[info.status] })
+    // low
+    const lowValue = chart.domUtils.getDOMElm('#' + Constant.LOW_VALUE_ID)
+    lowValue.innerHTML = info.low
+    domUtils.setStyle(lowValue, { color: Color[info.status] })
+    // close
+    const closeValue = chart.domUtils.getDOMElm('#' + Constant.CLOSE_VALUE_ID)
+    closeValue.innerHTML = info.close
+    domUtils.setStyle(closeValue, { color: Color[info.status] })
+    // change
+    const changeValue = chart.domUtils.getDOMElm('#' + Constant.CHANGE_VALUE_ID)
+    changeValue.innerHTML = info.change
+    domUtils.setStyle(changeValue, { color: Color[info.status] })
+    // amplitude
+    const amplitudeValue = chart.domUtils.getDOMElm(
+      '#' + Constant.AMPLITUDE_VALUE_ID
+    )
+    amplitudeValue.innerHTML = info.amplitude
+    domUtils.setStyle(amplitudeValue, { color: Color[info.status] })
+  }
+
+  // 绘制MA信息
+  drawMAInfo (info) {
+    const { chart } = this
+    const { domUtils } = chart
+
+    for (const key in info) {
+      const data = info[key]
+      const valueSpan = chart.domUtils.getDOMElm(`#__ma-${key}__`)
+      valueSpan.innerHTML = data.value
+      domUtils.setStyle(valueSpan, { color: data.color })
+    }
   }
 
   // 绘制鼠标十字线
@@ -367,7 +548,9 @@ export default class View {
         data.time <= cursorTime && data.time + chart.klineUnit >= cursorTime
       )
     })
+    chart.cursorKline = candle
     if (!candle) {
+      chart.cursorKline = undefined
       return x
     }
 
@@ -375,7 +558,7 @@ export default class View {
     // 横坐标强制锁定寻找到的k线的中间部分
     const res = service.mapDataToCoordinate(candle.time, 0)
 
-    const formatedTime = dateFormat('YYYY-mm-dd HH:MM', new Date(candle.time))
+    const formatedTime = dateFormat('YYYY/mm/dd HH:MM', new Date(candle.time))
     // 绘制x轴矩形
     const { width: textWidth, height: textHeight } =
       chart.canvasUtils.getTextWidthAndHeight(
@@ -457,11 +640,10 @@ export default class View {
     const service = this.service
     const lastCandle = chart.dataZoom.data[chart.dataZoom.data.length - 1]
     const { y } = service.mapDataToCoordinate(lastCandle.time, lastCandle.close)
-    const status = lastCandle.close >= lastCandle.open ? 'up' : 'down'
     this.drawYAxisLabelPolygon(
       y,
-      status === 'up' ? '#027F57' : '#A71F3A',
-      status === 'up' ? '#03A46B' : '#C02944',
+      Color[lastCandle.status],
+      lastCandle.status === 'up' ? Color.upHighlight : Color.downHighlight,
       lastCandle.close
     )
   }

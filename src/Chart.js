@@ -1,4 +1,5 @@
-import canvasUtils from './utils.js'
+import canvasUtils, { domUtils } from './utils.js'
+import './chart.css'
 import logo from './logo.png'
 import Controller from './Controller'
 import Service from './Service'
@@ -10,11 +11,13 @@ export default class QuoteChart {
   controller
   options
   bars
+  container
   canvas
   ctx
   dpr
   logo
   canvasUtils
+  domUtils
   // k线单位,一根k线为多少时间
   klineUnit
   // canvas内边距
@@ -55,6 +58,8 @@ export default class QuoteChart {
   prevMousePosition = {}
   // 移动中的鼠标定位
   nowMousePosition = {}
+  // 当前光标所在的K线
+  cursorKline
   // 拖动系数
   dragCoefficient = 1000
   // 数据精度
@@ -75,6 +80,9 @@ export default class QuoteChart {
     }
   ]
 
+  // 绘制MA所需的数据
+  MAData
+
   // 当前MA中最大的周期,用于计算MA列表需要截取bars上的范围
   maxMAInterval
   // 正在加载更多数据
@@ -83,7 +91,19 @@ export default class QuoteChart {
   hasMoreData = true
 
   constructor (options) {
+    // 依赖生成并注入
+    this.view = new View()
+    this.service = new Service()
+    this.controller = new Controller()
+    this.inject()
+
     this.options = options
+    this.container = document.querySelector(this.options.el)
+    this.domUtils = domUtils(this.container)
+    this.view.createElements()
+    this.ctx = this.canvas.getContext('2d')
+    this.canvasUtils = canvasUtils(this.ctx)
+
     this.logo = new Image()
     this.logo.src = options.logo || logo
     if (options.MA) {
@@ -94,16 +114,6 @@ export default class QuoteChart {
     )
     this.bars = options.bars
     this.klineUnit = this.bars[1].time - this.bars[0].time
-
-    // 依赖生成并注入
-    this.view = new View()
-    this.service = new Service()
-    this.controller = new Controller()
-    this.inject()
-
-    this.canvas = document.querySelector(options.el)
-    this.ctx = this.canvas.getContext('2d')
-    this.canvasUtils = canvasUtils(this.ctx)
 
     this.view.highDefinition()
     this.service.calcPadding(this.bars)
@@ -147,7 +157,6 @@ export default class QuoteChart {
       }
       this.bars[this.bars.length - 1] = candleToUpdate
     }
-
     this.view.draw()
   }
 }

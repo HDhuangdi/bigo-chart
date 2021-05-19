@@ -1,0 +1,19 @@
+#__candle-info__,
+#__MA-info__ {
+  position: absolute;
+  top: 5px;
+  left: 20px;
+  color: #76808f;
+  font-size: 12px;
+}
+#__candle-info__ span,
+#__MA-info__ span {
+  display: inline-block;
+}
+#__candle-info__ span:not(:first-child),
+#__MA-info__ span:not(:first-child) {
+  margin-left: 5px;
+}
+#__MA-info__ {
+  top: 20px;
+}
