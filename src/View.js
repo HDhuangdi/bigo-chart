@@ -29,9 +29,7 @@ export default class View {
   // 清空画布
   clearCanvas () {
     const chart = this.chart
-
-    chart.canvas.height = chart.canvasHeight
-    chart.canvas.width = chart.canvasWidth
+    chart.ctx.clearRect(0, 0, chart.canvasWidth, chart.canvasHeight)
   }
 
   // 绘制logo
@@ -57,6 +55,7 @@ export default class View {
     // 如果为用户控制dataZoom,就只需updte,否则就自动算dataZoom
     service.calcDataZoom(chart.dataZoom.user ? 'update' : 'init')
     this.clearCanvas()
+    this.drawBg()
     // 图片的特殊处理
     if (chart.logo.complete) {
       this.drawLogo()
@@ -70,6 +69,15 @@ export default class View {
     this.drawCandles()
     this.drawLastCandlePriceLine()
     this.drawCursorCross(chart.nowMousePosition.x, chart.nowMousePosition.y)
+  }
+
+  // 绘制背景
+  drawBg () {
+    const chart = this.chart
+
+    chart.ctx.beginPath()
+    chart.ctx.fillStyle = chart.options.backgroundColor || '#191b20'
+    chart.ctx.fillRect(0, 0, chart.canvasWidth, chart.canvasHeight)
   }
 
   // 绘制坐标轴
