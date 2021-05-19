@@ -77,6 +77,10 @@ export default class QuoteChart {
 
   // 当前MA中最大的周期,用于计算MA列表需要截取bars上的范围
   maxMAInterval
+  // 正在加载更多数据
+  loadMorePending
+  // 是否还有更多数据?
+  hasMoreData = true
 
   constructor (options) {
     this.options = options

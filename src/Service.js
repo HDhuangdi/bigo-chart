@@ -199,15 +199,19 @@ export default class Service {
   async loadMoreData () {
     const { chart, view } = this
 
-    if (chart.loadMorePending) return
+    if (chart.loadMorePending || !chart.hasMoreData) return
 
     const firstCandleTime = chart.bars[0].time
 
     if (chart.options.loadMore) {
       chart.loadMorePending = true
       const newbars = await chart.options.loadMore(firstCandleTime)
-      if (!newbars) return
       chart.loadMorePending = false
+      // empty data
+      if (!newbars) {
+        chart.hasMoreData = false
+        return
+      }
       chart.bars = newbars.concat(chart.bars)
       view.draw()
     }

@@ -50,8 +50,8 @@ export default class Controller {
     chart.dragCoefficient = (chart.xAxisUnitsVisiable / chart.klineUnit) * 40
     service.updateDataZoom(newDataZoomXAxisStartValue, newDataZoomXAxisEndValue)
 
-    // 分页 提前40个k线单位开始请求
-    if (newDataZoomXAxisStartValue - 40 * chart.klineUnit <= firstCandleTime) {
+    // 分页 提前100个k线单位开始请求
+    if (newDataZoomXAxisStartValue - 100 * chart.klineUnit <= firstCandleTime) {
       service.loadMoreData()
       return
     }
