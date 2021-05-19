@@ -279,14 +279,20 @@ export default class View {
         if (!nextPoint) {
           break
         }
-        // 边界处理
+        // 横向边界处理
         if (
           point.x <= chart.padding.left ||
           nextPoint.x >= chart.chartWidth + chart.padding.left
         ) {
           continue
         }
-
+        // 纵向边界处理
+        if (
+          point.y > chart.padding.top + chart.chartHeight ||
+          nextPoint.y > chart.padding.top + chart.chartHeight
+        ) {
+          continue
+        }
         chart.canvasUtils.drawLine(
           { x: point.x, y: point.y },
           { x: nextPoint.x, y: nextPoint.y },
