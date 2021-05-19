@@ -75,6 +75,9 @@ export default class QuoteChart {
     }
   ]
 
+  // 当前MA中最大的周期,用于计算MA列表需要截取bars上的范围
+  maxMAInterval
+
   constructor (options) {
     this.options = options
     this.logo = new Image()
@@ -82,6 +85,9 @@ export default class QuoteChart {
     if (options.MA) {
       this.MAOptions = options.MA
     }
+    this.maxMAInterval = Math.max(
+      ...this.MAOptions.map((item) => item.interval)
+    )
     this.bars = options.bars
     this.klineUnit = this.bars[1].time - this.bars[0].time
 
@@ -121,12 +127,14 @@ export default class QuoteChart {
       time: lastCandle.time
     }
     if (time - lastCandle.time >= this.klineUnit) {
+      // new candle
       candleToUpdate.open = lastCandle.close
       candleToUpdate.high = value
       candleToUpdate.low = value
       candleToUpdate.time = time
       this.bars.push(candleToUpdate)
     } else {
+      // update last candle
       if (value > lastCandle.high) {
         candleToUpdate.high = value
       }

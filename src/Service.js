@@ -94,30 +94,48 @@ export default class Service {
       chart.canvasWidth - chart.padding.left - chart.padding.right
   }
 
-  // 计算缩放对象
+  // 手动更新缩放对象
+  updateDataZoom (newDataZoomXAxisStartValue, newDataZoomXAxisEndValue) {
+    const chart = this.chart
+    const lastCandleTime = chart.bars[chart.bars.length - 1].time
+    const firstCandleTime = chart.bars[0].time
+    // 边界处理
+    if (
+      lastCandleTime < newDataZoomXAxisStartValue ||
+      firstCandleTime > newDataZoomXAxisEndValue
+    ) {
+      return
+    }
+
+    chart.dataZoom.xAxisStartValue = newDataZoomXAxisStartValue
+    chart.dataZoom.xAxisEndValue = newDataZoomXAxisEndValue
+  }
+
+  // 自动计算缩放对象
   calcDataZoom (type = 'update') {
     const chart = this.chart
 
     if (type === 'init') {
-      // x
-      chart.dataZoom.xAxisEndValue =
+      // x轴更新
+      const newDataZoomXAxisEndValue =
         chart.bars[chart.bars.length - 1].time +
         3 * chart.klineUnit -
         chart.rightSideOffset * chart.unitToXAxisPx
-      chart.dataZoom.xAxisStartValue =
-        chart.dataZoom.xAxisEndValue - chart.xAxisUnitsVisiable
+      const newDataZoomXAxisStartValue =
+        newDataZoomXAxisEndValue - chart.xAxisUnitsVisiable
+      this.updateDataZoom(newDataZoomXAxisStartValue, newDataZoomXAxisEndValue)
     } else if (type === 'update') {
       chart.xAxisUnitsVisiable =
         chart.dataZoom.xAxisEndValue - chart.dataZoom.xAxisStartValue
     }
 
-    // data  是否需要前后多拿一个?
+    // data  需要前后多拿maxMAInterval个
     chart.dataZoom.data = chart.bars.filter(
       (bar) =>
         bar.time <= chart.dataZoom.xAxisEndValue &&
         bar.time >= chart.dataZoom.xAxisStartValue
     )
-    // y
+    // y轴更新
     const sortedData = Array.prototype
       .concat([], chart.dataZoom.data)
       .sort((a, b) => b.high - a.high)
@@ -139,15 +157,15 @@ export default class Service {
   calcMAPoints () {
     const chart = this.chart
 
+    this.calcMAList()
     chart.MAOptions.forEach(({ interval }, index, arr) => {
       const MAPoints = []
       const reduce = []
-      for (let index = 0; index < chart.bars.length; index++) {
+      for (let index = 0; index < chart.MAOptions.data.length; index++) {
         const point = {
-          value: chart.bars[index].close,
-          time: chart.bars[index].time
+          value: chart.MAOptions.data[index].close,
+          time: chart.MAOptions.data[index].time
         }
-
         reduce.push(point)
         if (index >= interval - 1) {
           MAPoints.push({
@@ -162,6 +180,19 @@ export default class Service {
       }
       arr[index].points = MAPoints
     })
+  }
+
+  // 计算当前屏幕上需要显示完全的MA线所需截取bars的范围
+  calcMAList () {
+    const chart = this.chart
+    chart.MAOptions.data = chart.bars.filter(
+      (bar) =>
+        bar.time <=
+          chart.dataZoom.xAxisEndValue +
+            chart.maxMAInterval * chart.klineUnit &&
+        bar.time >=
+          chart.dataZoom.xAxisStartValue - chart.maxMAInterval * chart.klineUnit
+    )
   }
 
   // 分页逻辑

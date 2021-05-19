@@ -54,7 +54,8 @@ export default class View {
     const chart = this.chart
     const service = this.service
 
-    service.calcDataZoom('update')
+    // 如果为用户控制dataZoom,就只需updte,否则就自动算dataZoom
+    service.calcDataZoom(chart.dataZoom.user ? 'update' : 'init')
     this.clearCanvas()
     // 图片的特殊处理
     if (chart.logo.complete) {
@@ -265,12 +266,12 @@ export default class View {
     const service = this.service
     const chart = this.chart
     service.calcMAPoints()
-
     chart.MAOptions.forEach((option) => {
       const MAPoints = option.points
       const MAPointsPositions = MAPoints.map((point) =>
         service.mapDataToCoordinate(point.time, point.value)
       )
+
       chart.ctx.beginPath()
       for (let index = 0; index < MAPointsPositions.length; index++) {
         const point = MAPointsPositions[index]
@@ -323,7 +324,7 @@ export default class View {
       { x: chart.padding.left + chart.chartWidth, y },
       '#AEB4BC',
       true,
-      [10, 10]
+      [5 * chart.dpr, 5 * chart.dpr]
     )
     // 纵向
     chart.canvasUtils.drawLine(
@@ -331,7 +332,7 @@ export default class View {
       { x, y: chart.padding.top + chart.chartHeight },
       '#AEB4BC',
       true,
-      [10, 10]
+      [5 * chart.dpr, 5 * chart.dpr]
     )
   }
 
@@ -360,10 +361,7 @@ export default class View {
     // 横坐标强制锁定寻找到的k线的中间部分
     const res = service.mapDataToCoordinate(candle.time, 0)
 
-    const formatedTime = dateFormat(
-      'YYYY-mm-dd HH:MM:SS',
-      new Date(candle.time)
-    )
+    const formatedTime = dateFormat('YYYY-mm-dd HH:MM', new Date(candle.time))
     // 绘制x轴矩形
     const { width: textWidth, height: textHeight } =
       chart.canvasUtils.getTextWidthAndHeight(
@@ -426,8 +424,8 @@ export default class View {
         y: y + yReactHeight / 2
       }
     ]
-    chart.canvasUtils.drawPolygon(points, 'fill', fillStyle)
-    chart.canvasUtils.drawPolygon(points, 'stroke', strokeStyle)
+    chart.canvasUtils.drawPolygon(points, 'fill', fillStyle, 1 * chart.dpr)
+    chart.canvasUtils.drawPolygon(points, 'stroke', strokeStyle, 1 * chart.dpr)
     chart.canvasUtils.drawText(
       chart.padding.left + chart.chartWidth + chart.scaleHeight,
       y,
@@ -449,7 +447,7 @@ export default class View {
     this.drawYAxisLabelPolygon(
       y,
       status === 'up' ? '#027F57' : '#A71F3A',
-      status === 'up' ? '##03A46B' : '#C02944',
+      status === 'up' ? '#03A46B' : '#C02944',
       lastCandle.close
     )
   }

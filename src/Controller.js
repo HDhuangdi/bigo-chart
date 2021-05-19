@@ -37,8 +37,9 @@ export default class Controller {
     chart.nowMousePosition = { x, y }
     // 绘制
     if (!chart.isMouseDown) return view.draw()
+    chart.dataZoom.user = true
     const diffX = chart.prevMousePosition.x - chart.nowMousePosition.x
-    const lastCandleTime = chart.bars[chart.bars.length - 1].time
+
     const firstCandleTime = chart.bars[0].time
     const newDataZoomXAxisStartValue =
       chart.dataZoom.xAxisStartValue + chart.dragCoefficient * diffX
@@ -47,19 +48,10 @@ export default class Controller {
 
     // 更新拖动系数
     chart.dragCoefficient = (chart.xAxisUnitsVisiable / chart.klineUnit) * 40
-    // 边界处理
-    if (
-      lastCandleTime < newDataZoomXAxisStartValue ||
-      firstCandleTime > newDataZoomXAxisEndValue
-    ) {
-      return
-    }
+    service.updateDataZoom(newDataZoomXAxisStartValue, newDataZoomXAxisEndValue)
 
-    chart.dataZoom.xAxisStartValue = newDataZoomXAxisStartValue
-    chart.dataZoom.xAxisEndValue = newDataZoomXAxisEndValue
-
-    // 分页 提前20个k线单位开始请求
-    if (newDataZoomXAxisStartValue - 20 * chart.klineUnit <= firstCandleTime) {
+    // 分页 提前40个k线单位开始请求
+    if (newDataZoomXAxisStartValue - 40 * chart.klineUnit <= firstCandleTime) {
       service.loadMoreData()
       return
     }
@@ -76,9 +68,8 @@ export default class Controller {
 
   // 滚轮事件
   onMouseWeel (e) {
-    const chart = this.chart
-    const view = this.view
-    const service = this.service
+    const { chart, view, service } = this
+    chart.dataZoom.user = true
 
     let delta
     if (e.wheelDelta) {
@@ -89,20 +80,21 @@ export default class Controller {
       // FF浏览器使用的是detail,其值为“正负3”
       delta = -e.detail / 3
     }
+    let newDataZoomXAxisStartValue
+    let newDataZoomXAxisEndValue
     if (delta >= 0) {
       if (chart.dataZoom.data.length <= 20) return
       // 放大
-      chart.dataZoom.xAxisStartValue =
-        chart.dataZoom.xAxisStartValue + 1000 * 120
-      chart.dataZoom.xAxisEndValue = chart.dataZoom.xAxisEndValue - 1000 * 120
+      newDataZoomXAxisStartValue = chart.dataZoom.xAxisStartValue + 1000 * 120
+      newDataZoomXAxisEndValue = chart.dataZoom.xAxisEndValue - 1000 * 120
     } else {
       if (chart.dataZoom.data.length >= 200) return
       // 缩小
-      chart.dataZoom.xAxisStartValue =
-        chart.dataZoom.xAxisStartValue - 1000 * 120
-      chart.dataZoom.xAxisEndValue = chart.dataZoom.xAxisEndValue + 1000 * 120
+      newDataZoomXAxisStartValue = chart.dataZoom.xAxisStartValue - 1000 * 120
+      newDataZoomXAxisEndValue = chart.dataZoom.xAxisEndValue + 1000 * 120
     }
-    service.calcDataZoom()
+
+    service.updateDataZoom(newDataZoomXAxisStartValue, newDataZoomXAxisEndValue)
     view.draw()
   }
 }

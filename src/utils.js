@@ -27,9 +27,9 @@ export default function canvasUtils (ctx) {
     ctx.fill()
   }
 
-  function drawPolygon (pointsList, type, color) {
+  function drawPolygon (pointsList, type, color, width) {
     ctx.beginPath()
-    ctx.lineWidth = 3
+    ctx.lineWidth = width
     ctx.moveTo(pointsList[0].x, pointsList[0].y)
     pointsList.forEach((point, index) => {
       if (index >= 1) {
