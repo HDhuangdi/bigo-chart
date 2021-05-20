@@ -50,7 +50,7 @@ export default class BigoChart {
     this.controller = new Controller()
     this.inject()
 
-    this.options = JSON.parse(JSON.stringify(options))
+    this.options = options
     this.container = document.querySelector(this.options.el)
     this.domUtils = domUtils(this.container)
     this.view.createElements()
