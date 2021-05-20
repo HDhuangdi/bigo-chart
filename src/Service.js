@@ -4,6 +4,18 @@ export default class Service {
   view
   controller
   chart
+  // 1px 为多少x轴单位
+  unitToXAxisPx = 0
+  // 1px 为多少y轴单位
+  unitToYAxisPx = 0
+  // 缩放对象
+  dataZoom = {}
+  // 正在加载更多数据
+  loadMorePending
+  // 是否还有更多数据?
+  hasMoreData = true
+  // y轴缓冲系数
+  yAxisBuffer = 0.1
 
   inject (view, controller, chart) {
     this.view = view
@@ -13,19 +25,19 @@ export default class Service {
 
   // 计算1像素等于多少x轴单位
   calcUnitToXAxisPx () {
-    const chart = this.chart
+    const { view } = this
 
-    chart.unitToXAxisPx = chart.xAxisUnitsVisiable / chart.chartWidth
+    this.unitToXAxisPx = view.xAxisUnitsVisiable / view.chartWidth
   }
 
   // 计算1像素等于多少y轴单位
   calcUnitToYAxisPx () {
-    const chart = this.chart
+    const { view } = this
 
     // 根据chartHeight和y轴范围算出1px为多少y轴单位
-    chart.unitToYAxisPx =
-      (chart.dataZoom.yAxisEndValue - chart.dataZoom.yAxisStartValue) /
-      chart.chartHeight
+    this.unitToYAxisPx =
+      (this.dataZoom.yAxisEndValue - this.dataZoom.yAxisStartValue) /
+      view.chartHeight
   }
 
   // 计算x轴所有标签的坐标
@@ -55,20 +67,21 @@ export default class Service {
 
   // 计算y轴所有标签的坐标
   calcYAxisCoordinate () {
-    const chart = this.chart
+    const { view } = this
+
     const intervalValue =
-      (chart.dataZoom.yAxisEndValue - chart.dataZoom.yAxisStartValue) /
-      (chart.yAxisUnitsVisiable - 1)
+      (this.dataZoom.yAxisEndValue - this.dataZoom.yAxisStartValue) /
+      (view.yAxisUnitsVisiable - 1)
     const yAxisData = []
-    for (let index = 0; index < chart.yAxisUnitsVisiable; index++) {
+    for (let index = 0; index < view.yAxisUnitsVisiable; index++) {
       const res = this.mapDataToCoordinate(
         0,
-        chart.dataZoom.yAxisStartValue + index * intervalValue
+        this.dataZoom.yAxisStartValue + index * intervalValue
       )
       yAxisData.push({
-        x: chart.padding.left + chart.chartWidth,
+        x: view.padding.left + view.chartWidth,
         y: res.y,
-        value: chart.dataZoom.yAxisStartValue + index * intervalValue
+        value: this.dataZoom.yAxisStartValue + index * intervalValue
       })
     }
     return yAxisData
@@ -76,21 +89,21 @@ export default class Service {
 
   // 计算chart padding
   calcPadding (data) {
-    const chart = this.chart
+    const { chart, view } = this
+
     const { width: textWidth } = chart.canvasUtils.getTextWidthAndHeight(
-      chart.axisLabelSize * chart.dpr,
+      view.axisLabelSize * view.dpr,
       'sans-serif',
       fixNumber(Math.max(...data.map((item) => item.high)), chart.digitNumber)
     )
-    chart.padding.top = 15 * chart.dpr
-    chart.padding.bottom = 20 * chart.dpr
-    chart.padding.left = 15 * chart.dpr
+    view.padding.top = 15 * view.dpr
+    view.padding.bottom = 20 * view.dpr
+    view.padding.left = 15 * view.dpr
 
-    chart.padding.right = textWidth + 10 * chart.dpr /** 为了美观 10px 冗余 */
-    chart.chartHeight =
-      chart.canvasHeight - chart.padding.top - chart.padding.bottom
-    chart.chartWidth =
-      chart.canvasWidth - chart.padding.left - chart.padding.right
+    view.padding.right = textWidth + 10 * view.dpr /** 为了美观 10px 冗余 */
+    view.chartHeight =
+      view.canvasHeight - view.padding.top - view.padding.bottom
+    view.chartWidth = view.canvasWidth - view.padding.left - view.padding.right
   }
 
   // 手动更新缩放对象
@@ -106,50 +119,47 @@ export default class Service {
       return
     }
 
-    chart.dataZoom.xAxisStartValue = newDataZoomXAxisStartValue
-    chart.dataZoom.xAxisEndValue = newDataZoomXAxisEndValue
+    this.dataZoom.xAxisStartValue = newDataZoomXAxisStartValue
+    this.dataZoom.xAxisEndValue = newDataZoomXAxisEndValue
   }
 
   // 自动计算缩放对象
   calcDataZoom (type = 'update') {
-    const chart = this.chart
+    const { chart, view } = this
 
     if (type === 'init') {
       // x轴更新
       const newDataZoomXAxisEndValue =
-        chart.bars[chart.bars.length - 1].time +
-        3 * chart.klineUnit -
-        chart.rightSideOffset * chart.unitToXAxisPx
+        chart.bars[chart.bars.length - 1].time + 3 * chart.klineUnit
+
       const newDataZoomXAxisStartValue =
-        newDataZoomXAxisEndValue - chart.xAxisUnitsVisiable
+        newDataZoomXAxisEndValue - view.xAxisUnitsVisiable
       this.updateDataZoom(newDataZoomXAxisStartValue, newDataZoomXAxisEndValue)
     } else if (type === 'update') {
-      chart.xAxisUnitsVisiable =
-        chart.dataZoom.xAxisEndValue - chart.dataZoom.xAxisStartValue
+      view.xAxisUnitsVisiable =
+        this.dataZoom.xAxisEndValue - this.dataZoom.xAxisStartValue
     }
 
     // data  需要前后多拿maxMAInterval个
-    chart.dataZoom.data = chart.bars.filter(
+    this.dataZoom.data = chart.bars.filter(
       (bar) =>
-        bar.time <= chart.dataZoom.xAxisEndValue &&
-        bar.time >= chart.dataZoom.xAxisStartValue
+        bar.time <= this.dataZoom.xAxisEndValue &&
+        bar.time >= this.dataZoom.xAxisStartValue
     )
     // y轴更新
     const sortedData = Array.prototype
-      .concat([], chart.dataZoom.data)
+      .concat([], this.dataZoom.data)
       .sort((a, b) => b.high - a.high)
     // y轴最高的数据
     const highest = sortedData[0].high
     sortedData.sort((a, b) => a.low - b.low)
     // y轴最低的数据
     const lowest = sortedData[0].low
-    // 缓冲系数
-    chart.yAxisBuffer = 0.1
 
-    chart.dataZoom.yAxisEndValue =
-      highest + (highest - lowest) * chart.yAxisBuffer
-    chart.dataZoom.yAxisStartValue =
-      lowest - (highest - lowest) * chart.yAxisBuffer
+    this.dataZoom.yAxisEndValue =
+      highest + (highest - lowest) * this.yAxisBuffer
+    this.dataZoom.yAxisStartValue =
+      lowest - (highest - lowest) * this.yAxisBuffer
   }
 
   // 计算MA points
@@ -187,10 +197,9 @@ export default class Service {
     chart.MAData = chart.bars.filter(
       (bar) =>
         bar.time <=
-          chart.dataZoom.xAxisEndValue +
-            chart.maxMAInterval * chart.klineUnit &&
+          this.dataZoom.xAxisEndValue + chart.maxMAInterval * chart.klineUnit &&
         bar.time >=
-          chart.dataZoom.xAxisStartValue - chart.maxMAInterval * chart.klineUnit
+          this.dataZoom.xAxisStartValue - chart.maxMAInterval * chart.klineUnit
     )
   }
 
@@ -210,17 +219,17 @@ export default class Service {
   async loadMoreData () {
     const { chart, view } = this
 
-    if (chart.loadMorePending || !chart.hasMoreData) return
+    if (this.loadMorePending || !this.hasMoreData) return
 
     const firstCandleTime = chart.bars[0].time
 
     if (chart.options.loadMore) {
-      chart.loadMorePending = true
+      this.loadMorePending = true
       const newbars = await chart.options.loadMore(firstCandleTime)
-      chart.loadMorePending = false
+      this.loadMorePending = false
       // empty data
       if (!newbars) {
-        chart.hasMoreData = false
+        this.hasMoreData = false
         return
       }
       chart.bars = newbars.concat(chart.bars)
@@ -230,7 +239,7 @@ export default class Service {
 
   // 数据 => 坐标 映射
   mapDataToCoordinate (time, value) {
-    const chart = this.chart
+    const { view } = this
 
     const position = {
       x: 0,
@@ -238,25 +247,23 @@ export default class Service {
     }
 
     position.x =
-      chart.padding.left +
-      ((time - chart.dataZoom.xAxisStartValue) / chart.unitToXAxisPx).toFixed(
-        1
-      ) *
+      view.padding.left +
+      ((time - this.dataZoom.xAxisStartValue) / this.unitToXAxisPx).toFixed(1) *
         1
 
     const height =
-      ((value - chart.dataZoom.yAxisStartValue) / chart.unitToYAxisPx).toFixed(
+      ((value - this.dataZoom.yAxisStartValue) / this.unitToYAxisPx).toFixed(
         1
       ) * 1
 
-    position.y = chart.padding.top + chart.chartHeight - height
+    position.y = view.padding.top + view.chartHeight - height
 
     return position
   }
 
   // 坐标 => 数据 映射 (此处的坐标需要传递加上padding后的换算值)
   mapCoordinateToData (x, y) {
-    const chart = this.chart
+    const { chart, view } = this
 
     const data = {
       time: 0,
@@ -264,12 +271,12 @@ export default class Service {
     }
 
     data.time = Math.floor(
-      chart.dataZoom.xAxisStartValue + x * chart.unitToXAxisPx
+      this.dataZoom.xAxisStartValue + x * this.unitToXAxisPx
     )
     data.value =
       (
-        chart.dataZoom.yAxisStartValue +
-        (chart.chartHeight - y) * chart.unitToYAxisPx
+        this.dataZoom.yAxisStartValue +
+        (view.chartHeight - y) * this.unitToYAxisPx
       ).toFixed(chart.digitNumber) * 1
     return data
   }

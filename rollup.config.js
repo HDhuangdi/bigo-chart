@@ -10,9 +10,9 @@ import postcss from "rollup-plugin-postcss"
 export default {
   input: "src/Chart.js",
   output: [
-    { file: "dist/index.js", format: "iife", name: "QuoteChart" },
+    { file: "dist/index.js", format: "iife", name: "BigoChart" },
     { file: "dist/index.esm.js", format: "esm" },
-    { file: "dist/index.umd.js", format: "umd", name: "QuoteChart" },
+    { file: "dist/index.umd.js", format: "umd", name: "BigoChart" },
     { file: "dist/index.amd.js", format: "amd" },
     { file: "dist/index.cjs.js", format: "cjs" },
   ],

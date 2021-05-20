@@ -3,6 +3,15 @@ export default class Controller {
   service
   chart
 
+  // 当前鼠标是否按下
+  isMouseDown = false
+  // 上一次移动时鼠标的定位
+  prevMousePosition = {}
+  // 移动中的鼠标定位
+  nowMousePosition = {}
+  // 拖动系数
+  dragCoefficient = 1000
+
   inject (view, service, chart) {
     this.view = view
     this.service = service
@@ -11,20 +20,18 @@ export default class Controller {
 
   // 注册事件
   registerMouseEvents () {
-    const chart = this.chart
+    const { view } = this
 
-    chart.canvas.addEventListener('mousedown', this.onMouseDown.bind(this))
-    chart.canvas.addEventListener('mousemove', this.onMouseMove.bind(this))
-    chart.canvas.addEventListener('mouseup', this.onMouseUp.bind(this))
-    chart.canvas.addEventListener('mousewheel', this.onMouseWeel.bind(this))
+    view.canvas.addEventListener('mousedown', this.onMouseDown.bind(this))
+    view.canvas.addEventListener('mousemove', this.onMouseMove.bind(this))
+    view.canvas.addEventListener('mouseup', this.onMouseUp.bind(this))
+    view.canvas.addEventListener('mousewheel', this.onMouseWeel.bind(this))
   }
 
   // 鼠标点击事件
   onMouseDown (e) {
-    const chart = this.chart
-
-    chart.isMouseDown = true
-    chart.prevMousePosition = { x: e.offsetX, y: e.offsetY }
+    this.isMouseDown = true
+    this.prevMousePosition = { x: e.offsetX, y: e.offsetY }
   }
 
   // 鼠标移动事件
@@ -34,21 +41,17 @@ export default class Controller {
     const x = e.offsetX
     const y = e.offsetY
 
-    chart.nowMousePosition = { x, y }
+    this.nowMousePosition = { x, y }
     // 绘制
-    if (!chart.isMouseDown) return view.draw()
-    chart.dataZoom.user = true
-    const diffX = chart.prevMousePosition.x - chart.nowMousePosition.x
+    if (!this.isMouseDown) return view.draw()
+    service.dataZoom.user = true
+    const diffX = this.prevMousePosition.x - this.nowMousePosition.x
 
     const firstCandleTime = chart.bars[0].time
     const newDataZoomXAxisStartValue =
-      chart.dataZoom.xAxisStartValue + chart.dragCoefficient * diffX
+      service.dataZoom.xAxisStartValue + this.dragCoefficient * diffX
     const newDataZoomXAxisEndValue =
-      chart.dataZoom.xAxisEndValue + chart.dragCoefficient * diffX
-
-    // 更新拖动系数
-    chart.dragCoefficient = (chart.xAxisUnitsVisiable / chart.klineUnit) * 40
-    service.updateDataZoom(newDataZoomXAxisStartValue, newDataZoomXAxisEndValue)
+      service.dataZoom.xAxisEndValue + this.dragCoefficient * diffX
 
     // 分页 提前100个k线单位开始请求
     if (newDataZoomXAxisStartValue - 100 * chart.klineUnit <= firstCandleTime) {
@@ -56,20 +59,23 @@ export default class Controller {
       return
     }
 
+    // 更新拖动系数
+    this.dragCoefficient = (view.xAxisUnitsVisiable / chart.klineUnit) * 40
+    service.updateDataZoom(newDataZoomXAxisStartValue, newDataZoomXAxisEndValue)
+
     view.draw()
-    chart.prevMousePosition = { x, y }
+    this.prevMousePosition = { x, y }
   }
 
   // 鼠标抬起事件
   onMouseUp () {
-    const chart = this.chart
-    chart.isMouseDown = false
+    this.isMouseDown = false
   }
 
   // 滚轮事件
   onMouseWeel (e) {
-    const { chart, view, service } = this
-    chart.dataZoom.user = true
+    const { view, service } = this
+    service.dataZoom.user = true
 
     let delta
     if (e.wheelDelta) {
@@ -83,15 +89,15 @@ export default class Controller {
     let newDataZoomXAxisStartValue
     let newDataZoomXAxisEndValue
     if (delta >= 0) {
-      if (chart.dataZoom.data.length <= 20) return
+      if (service.dataZoom.data.length <= 20) return
       // 放大
-      newDataZoomXAxisStartValue = chart.dataZoom.xAxisStartValue + 1000 * 120
-      newDataZoomXAxisEndValue = chart.dataZoom.xAxisEndValue - 1000 * 120
+      newDataZoomXAxisStartValue = service.dataZoom.xAxisStartValue + 1000 * 120
+      newDataZoomXAxisEndValue = service.dataZoom.xAxisEndValue - 1000 * 120
     } else {
-      if (chart.dataZoom.data.length >= 200) return
+      if (service.dataZoom.data.length >= 200) return
       // 缩小
-      newDataZoomXAxisStartValue = chart.dataZoom.xAxisStartValue - 1000 * 120
-      newDataZoomXAxisEndValue = chart.dataZoom.xAxisEndValue + 1000 * 120
+      newDataZoomXAxisStartValue = service.dataZoom.xAxisStartValue - 1000 * 120
+      newDataZoomXAxisEndValue = service.dataZoom.xAxisEndValue + 1000 * 120
     }
 
     service.updateDataZoom(newDataZoomXAxisStartValue, newDataZoomXAxisEndValue)

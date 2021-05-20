@@ -6,6 +6,32 @@ export default class View {
   service
   controller
   chart
+  canvas
+  ctx
+  dpr
+  logo
+  // canvas内边距
+  padding = {}
+  // canvas高度
+  canvasHeight
+  // ccanvas宽度
+  canvasWidth
+  // 图表高度
+  chartHeight
+  // 图表宽度
+  chartWidth
+  // x轴显示的单位数 默认120分钟的数据
+  xAxisUnitsVisiable = 1000 * 60 * 120
+  // y轴显示的单位数 默认8个
+  yAxisUnitsVisiable = 8
+  // 坐标轴轴标签字体大小
+  axisLabelSize = 10
+  // xy轴刻度线长度
+  scaleHeight
+  // 每根蜡烛的宽度
+  candleWidth
+  // 每根蜡烛的间距
+  candleMargin
 
   inject (service, controller, chart) {
     this.service = service
@@ -22,12 +48,12 @@ export default class View {
     // canvas
     const height = box.height
     const width = box.width
-    chart.canvas = chart.domUtils.createElm('canvas', {
+    this.canvas = chart.domUtils.createElm('canvas', {
       id: Constant.CANVAS_ID,
       height,
       width
     })
-    chart.domUtils.appendElms(chart.canvas)
+    chart.domUtils.appendElms(this.canvas)
 
     // candle info
     const candleInfo = chart.domUtils.createElm('div', {
@@ -131,37 +157,31 @@ export default class View {
 
   // 高清化
   highDefinition () {
-    const chart = this.chart
+    this.dpr = window.devicePixelRatio || 1
+    const rect = this.canvas.getBoundingClientRect()
 
-    chart.dpr = window.devicePixelRatio || 1
-    const rect = chart.canvas.getBoundingClientRect()
-
-    chart.canvas.width = rect.width * chart.dpr
-    chart.canvas.height = rect.height * chart.dpr
-    chart.canvasWidth = chart.canvas.width
-    chart.canvasHeight = chart.canvas.height
-    chart.canvas.style.height = chart.canvas.height / chart.dpr + 'px'
-    chart.canvas.style.width = chart.canvas.width / chart.dpr + 'px'
+    this.canvas.width = rect.width * this.dpr
+    this.canvas.height = rect.height * this.dpr
+    this.canvasWidth = this.canvas.width
+    this.canvasHeight = this.canvas.height
+    this.canvas.style.height = this.canvas.height / this.dpr + 'px'
+    this.canvas.style.width = this.canvas.width / this.dpr + 'px'
   }
 
   // 清空画布
   clearCanvas () {
-    const chart = this.chart
-
-    chart.canvas.width = chart.canvasWidth
-    chart.canvas.height = chart.canvasHeight
+    this.canvas.width = this.canvasWidth
+    this.canvas.height = this.canvasHeight
   }
 
   // 绘制logo
   drawLogo () {
-    const chart = this.chart
-
-    const logoWidth = 464 * 0.75 * chart.dpr
-    const logoHeight = 114 * 0.75 * chart.dpr
-    chart.ctx.drawImage(
-      chart.logo,
-      chart.canvasWidth / 2 - logoWidth / 2,
-      chart.canvasHeight / 2 - logoHeight / 2,
+    const logoWidth = 464 * 0.75 * this.dpr
+    const logoHeight = 114 * 0.75 * this.dpr
+    this.ctx.drawImage(
+      this.logo,
+      this.canvasWidth / 2 - logoWidth / 2,
+      this.canvasHeight / 2 - logoHeight / 2,
       logoWidth,
       logoHeight
     )
@@ -169,18 +189,17 @@ export default class View {
 
   // 绘制
   draw () {
-    const chart = this.chart
-    const service = this.service
+    const { service, controller } = this
 
     // 如果为用户控制dataZoom,就只需updte,否则就自动算dataZoom
-    service.calcDataZoom(chart.dataZoom.user ? 'update' : 'init')
+    service.calcDataZoom(service.dataZoom.user ? 'update' : 'init')
     this.clearCanvas()
     this.drawBg()
     // 图片的特殊处理
-    if (chart.logo.complete) {
+    if (this.logo.complete) {
       this.drawLogo()
     } else {
-      chart.logo.onload = () => {
+      this.logo.onload = () => {
         this.drawLogo()
       }
     }
@@ -189,16 +208,19 @@ export default class View {
     this.drawCandles()
     this.drawKlineInfo()
     this.drawLastCandlePriceLine()
-    this.drawCursorCross(chart.nowMousePosition.x, chart.nowMousePosition.y)
+    this.drawCursorCross(
+      controller.nowMousePosition.x,
+      controller.nowMousePosition.y
+    )
   }
 
   // 绘制背景
   drawBg () {
     const chart = this.chart
 
-    chart.ctx.beginPath()
-    chart.ctx.fillStyle = chart.options.backgroundColor || '#191b20'
-    chart.ctx.fillRect(0, 0, chart.canvasWidth, chart.canvasHeight)
+    this.ctx.beginPath()
+    this.ctx.fillStyle = chart.options.backgroundColor || '#191b20'
+    this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight)
   }
 
   // 绘制坐标轴
@@ -218,14 +240,14 @@ export default class View {
     const chart = this.chart
 
     const xAxisPosition = service.calcXAxisCoordinate()
-    chart.scaleHeight = 5 * chart.dpr
+    this.scaleHeight = 5 * this.dpr
 
     // 轴线
     chart.canvasUtils.drawLine(
-      { x: chart.padding.left, y: chart.chartHeight + chart.padding.top },
+      { x: this.padding.left, y: this.chartHeight + this.padding.top },
       {
-        x: chart.chartWidth + chart.padding.left,
-        y: chart.chartHeight + chart.padding.top
+        x: this.chartWidth + this.padding.left,
+        y: this.chartHeight + this.padding.top
       },
       '#34383F'
     )
@@ -233,23 +255,20 @@ export default class View {
     for (const data of xAxisPosition) {
       const x = data.x
       // 超出左右边界不处理
-      if (
-        x >= chart.padding.left + chart.chartWidth ||
-        x <= chart.padding.left
-      ) {
+      if (x >= this.padding.left + this.chartWidth || x <= this.padding.left) {
         continue
       }
 
       // 绘制刻度线
       chart.canvasUtils.drawLine(
-        { x, y: chart.chartHeight + chart.padding.top },
-        { x, y: chart.chartHeight + chart.padding.top + chart.scaleHeight },
+        { x, y: this.chartHeight + this.padding.top },
+        { x, y: this.chartHeight + this.padding.top + this.scaleHeight },
         'rgb(132, 142, 156)'
       )
       // 绘制网格
       chart.canvasUtils.drawLine(
-        { x, y: chart.padding.top },
-        { x, y: chart.chartHeight + chart.padding.top },
+        { x, y: this.padding.top },
+        { x, y: this.chartHeight + this.padding.top },
         '#24272C'
       )
 
@@ -265,27 +284,27 @@ export default class View {
     const yAxisPosition = service.calcYAxisCoordinate()
 
     chart.canvasUtils.drawLine(
-      { x: chart.padding.left + chart.chartWidth, y: chart.padding.top },
+      { x: this.padding.left + this.chartWidth, y: this.padding.top },
       {
-        x: chart.padding.left + chart.chartWidth,
-        y: chart.chartHeight + chart.padding.top
+        x: this.padding.left + this.chartWidth,
+        y: this.chartHeight + this.padding.top
       },
       '#34383F'
     )
     yAxisPosition.forEach((data) => {
       // 绘制刻度线
       chart.canvasUtils.drawLine(
-        { x: chart.padding.left + chart.chartWidth, y: data.y },
+        { x: this.padding.left + this.chartWidth, y: data.y },
         {
-          x: chart.chartWidth + chart.padding.top + chart.scaleHeight,
+          x: this.chartWidth + this.padding.top + this.scaleHeight,
           y: data.y
         },
         'rgb(132, 142, 156)'
       )
       // 绘制网格
       chart.canvasUtils.drawLine(
-        { x: chart.padding.left, y: data.y },
-        { x: chart.chartWidth + chart.padding.left, y: data.y },
+        { x: this.padding.left, y: data.y },
+        { x: this.chartWidth + this.padding.left, y: data.y },
         '#24272C'
       )
       this.drawLabels({ x: undefined, y: data.y }, data.value)
@@ -306,10 +325,10 @@ export default class View {
     }
 
     chart.canvasUtils.drawText(
-      potision.x || chart.padding.left + chart.chartWidth + chart.scaleHeight,
-      potision.y || chart.chartHeight + chart.padding.top + chart.scaleHeight,
+      potision.x || this.padding.left + this.chartWidth + this.scaleHeight,
+      potision.y || this.chartHeight + this.padding.top + this.scaleHeight,
       _value,
-      chart.axisLabelSize * chart.dpr + 'px sans-serif',
+      this.axisLabelSize * this.dpr + 'px sans-serif',
       potision.x ? 'top' : 'middle',
       'rgb(132, 142, 156)',
       potision.x ? 'center' : 'left'
@@ -318,7 +337,7 @@ export default class View {
 
   // 绘制蜡烛图
   drawCandles () {
-    this.chart.dataZoom.data.forEach((candleData, index) => {
+    this.service.dataZoom.data.forEach((candleData, index) => {
       this.drawCandle(candleData, index)
     })
   }
@@ -349,32 +368,32 @@ export default class View {
       candleData.time,
       candleData.low
     )
-    chart.candleMargin = chart.klineUnit / 20 / chart.unitToXAxisPx // 蜡烛间距为 1/20 k线单位所对应的宽度
-    chart.candleWidth =
-      chart.klineUnit / chart.unitToXAxisPx - 2 * chart.candleMargin
+    this.candleMargin = chart.klineUnit / 20 / service.unitToXAxisPx // 蜡烛间距为 1/20 k线单位所对应的宽度
+    this.candleWidth =
+      chart.klineUnit / service.unitToXAxisPx - 2 * this.candleMargin
 
     let x =
       status === 'up'
-        ? closePosition.x - chart.candleWidth / 2
-        : openPosition.x - chart.candleWidth / 2
+        ? closePosition.x - this.candleWidth / 2
+        : openPosition.x - this.candleWidth / 2
     const y = status === 'up' ? closePosition.y : openPosition.y
     const height = Math.abs(closePosition.y - openPosition.y)
-    let width = chart.candleWidth
+    let width = this.candleWidth
 
     // 超出右边界的蜡烛的width处理
-    if (x + width >= chart.padding.left + chart.chartWidth) {
+    if (x + width >= this.padding.left + this.chartWidth) {
       width =
         width -
-        (x + width - chart.padding.left - chart.chartWidth) -
-        2 * chart.dpr /** 为了显示效果更加美观,2px 空余空间 */
+        (x + width - this.padding.left - this.chartWidth) -
+        2 * this.dpr /** 为了显示效果更加美观,2px 空余空间 */
       if (width < 0) {
         width = 0
       }
-    } else if (x < chart.padding.left) {
+    } else if (x < this.padding.left) {
       // 超出左边界的蜡烛的width处理
-      if (x + width < chart.padding.left) return
-      width = width - (chart.padding.left - x)
-      x = chart.padding.left
+      if (x + width < this.padding.left) return
+      width = width - (this.padding.left - x)
+      x = this.padding.left
     } else {
       // 绘制烛芯部分
       chart.canvasUtils.drawLine(
@@ -399,7 +418,7 @@ export default class View {
         service.mapDataToCoordinate(point.time, point.value)
       )
 
-      chart.ctx.beginPath()
+      this.ctx.beginPath()
       for (let index = 0; index < MAPointsPositions.length; index++) {
         const point = MAPointsPositions[index]
         const nextPoint = MAPointsPositions[index + 1]
@@ -408,15 +427,15 @@ export default class View {
         }
         // 横向边界处理
         if (
-          point.x <= chart.padding.left ||
-          nextPoint.x >= chart.chartWidth + chart.padding.left
+          point.x <= this.padding.left ||
+          nextPoint.x >= this.chartWidth + this.padding.left
         ) {
           continue
         }
         // 纵向边界处理
         if (
-          point.y > chart.padding.top + chart.chartHeight ||
-          nextPoint.y > chart.padding.top + chart.chartHeight
+          point.y > this.padding.top + this.chartHeight ||
+          nextPoint.y > this.padding.top + this.chartHeight
         ) {
           continue
         }
@@ -427,7 +446,7 @@ export default class View {
           false
         )
       }
-      chart.ctx.stroke()
+      this.ctx.stroke()
     })
   }
 
@@ -498,36 +517,36 @@ export default class View {
     if (!cursorX || !cursorY) return
     const chart = this.chart
 
-    let x = chart.dpr * cursorX
-    const y = chart.dpr * cursorY
+    let x = this.dpr * cursorX
+    const y = this.dpr * cursorY
 
     // 边界情况
     if (
-      x >= chart.padding.left + chart.chartWidth ||
-      y >= chart.padding.top + chart.chartHeight
+      x >= this.padding.left + this.chartWidth ||
+      y >= this.padding.top + this.chartHeight
     ) {
-      chart.canvas.style.cursor = 'default'
+      this.canvas.style.cursor = 'default'
       return
     }
-    chart.canvas.style.cursor = 'crosshair'
+    this.canvas.style.cursor = 'crosshair'
 
     x = this.drawCursorLabel(x, y)
 
     // 横向
     chart.canvasUtils.drawLine(
-      { x: chart.padding.left, y },
-      { x: chart.padding.left + chart.chartWidth, y },
+      { x: this.padding.left, y },
+      { x: this.padding.left + this.chartWidth, y },
       '#AEB4BC',
       true,
-      [5 * chart.dpr, 5 * chart.dpr]
+      [5 * this.dpr, 5 * this.dpr]
     )
     // 纵向
     chart.canvasUtils.drawLine(
-      { x, y: chart.padding.top },
-      { x, y: chart.padding.top + chart.chartHeight },
+      { x, y: this.padding.top },
+      { x, y: this.padding.top + this.chartHeight },
       '#AEB4BC',
       true,
-      [5 * chart.dpr, 5 * chart.dpr]
+      [5 * this.dpr, 5 * this.dpr]
     )
   }
 
@@ -538,12 +557,12 @@ export default class View {
 
     // 鼠标所指的坐标映射
     const { time: cursorTime, value } = service.mapCoordinateToData(
-      x - chart.padding.left,
-      y - chart.padding.top
+      x - this.padding.left,
+      y - this.padding.top
     )
 
     // 寻找鼠标所指的k线
-    const [candle] = chart.dataZoom.data.filter((data) => {
+    const [candle] = service.dataZoom.data.filter((data) => {
       return (
         data.time <= cursorTime && data.time + chart.klineUnit >= cursorTime
       )
@@ -562,15 +581,15 @@ export default class View {
     // 绘制x轴矩形
     const { width: textWidth, height: textHeight } =
       chart.canvasUtils.getTextWidthAndHeight(
-        chart.axisLabelSize * chart.dpr,
+        this.axisLabelSize * this.dpr,
         'sans-serif',
         formatedTime
       )
-    const reactWidth = textWidth + 15 * chart.dpr
-    const xReactHeight = chart.padding.bottom
+    const reactWidth = textWidth + 15 * this.dpr
+    const xReactHeight = this.padding.bottom
     chart.canvasUtils.drawRect(
       res.x - reactWidth / 2,
-      chart.chartHeight + chart.padding.top,
+      this.chartHeight + this.padding.top,
       reactWidth,
       xReactHeight,
       '#2B2F36'
@@ -578,9 +597,9 @@ export default class View {
 
     chart.canvasUtils.drawText(
       res.x,
-      chart.chartHeight + chart.padding.top + xReactHeight / 2 - textHeight / 2,
+      this.chartHeight + this.padding.top + xReactHeight / 2 - textHeight / 2,
       formatedTime,
-      chart.axisLabelSize * chart.dpr + 'px sans-serif',
+      this.axisLabelSize * this.dpr + 'px sans-serif',
       'top',
       '#fff',
       'center'
@@ -596,38 +615,38 @@ export default class View {
   drawYAxisLabelPolygon (y, fillStyle, strokeStyle, text) {
     const chart = this.chart
 
-    const yReactHeight = 20 * chart.dpr
-    const yReactWidth = chart.padding.right
+    const yReactHeight = 20 * this.dpr
+    const yReactWidth = this.padding.right
     // y轴标签外面的箭头形状所对应的坐标
     const points = [
       {
-        x: chart.padding.left + chart.chartWidth,
+        x: this.padding.left + this.chartWidth,
         y
       },
       {
-        x: chart.padding.left + chart.chartWidth + yReactWidth / 6,
+        x: this.padding.left + this.chartWidth + yReactWidth / 6,
         y: y - yReactHeight / 2
       },
       {
-        x: chart.padding.left + chart.chartWidth + yReactWidth,
+        x: this.padding.left + this.chartWidth + yReactWidth,
         y: y - yReactHeight / 2
       },
       {
-        x: chart.padding.left + chart.chartWidth + yReactWidth,
+        x: this.padding.left + this.chartWidth + yReactWidth,
         y: y + yReactHeight / 2
       },
       {
-        x: chart.padding.left + chart.chartWidth + yReactWidth / 6,
+        x: this.padding.left + this.chartWidth + yReactWidth / 6,
         y: y + yReactHeight / 2
       }
     ]
-    chart.canvasUtils.drawPolygon(points, 'fill', fillStyle, 1 * chart.dpr)
-    chart.canvasUtils.drawPolygon(points, 'stroke', strokeStyle, 1 * chart.dpr)
+    chart.canvasUtils.drawPolygon(points, 'fill', fillStyle, 1 * this.dpr)
+    chart.canvasUtils.drawPolygon(points, 'stroke', strokeStyle, 1 * this.dpr)
     chart.canvasUtils.drawText(
-      chart.padding.left + chart.chartWidth + chart.scaleHeight,
+      this.padding.left + this.chartWidth + this.scaleHeight,
       y,
       fixNumber(text, chart.digitNumber),
-      12 * chart.dpr + 'px ',
+      12 * this.dpr + 'px ',
       'middle',
       '#fff',
       'left'
@@ -636,9 +655,8 @@ export default class View {
 
   // 绘制屏幕中最后一根k线的水平线
   drawLastCandlePriceLine () {
-    const chart = this.chart
     const service = this.service
-    const lastCandle = chart.dataZoom.data[chart.dataZoom.data.length - 1]
+    const lastCandle = service.dataZoom.data[service.dataZoom.data.length - 1]
     const { y } = service.mapDataToCoordinate(lastCandle.time, lastCandle.close)
     this.drawYAxisLabelPolygon(
       y,

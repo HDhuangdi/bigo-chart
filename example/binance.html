@@ -56,7 +56,7 @@
       const endTime = new Date().getTime()
       let chart
       getKline(endTime).then((bars) => {
-        chart = new window.QuoteChart({
+        chart = new BigoChart({
           el: "#chart",
           bars,
           loadMore: async (endTime) => getKline(endTime),

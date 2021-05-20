@@ -5,63 +5,21 @@ import Controller from './Controller'
 import Service from './Service'
 import View from './View'
 
-export default class QuoteChart {
+export default class BigoChart {
   view
   service
   controller
+
   options
   bars
   container
-  canvas
-  ctx
-  dpr
-  logo
+
   canvasUtils
   domUtils
   // k线单位,一根k线为多少时间
   klineUnit
-  // canvas内边距
-  padding = {}
-  // canvas高度
-  canvasHeight
-  // canvas宽度
-  canvasWidth
-  // 图表高度
-  chartHeight
-  // 图表宽度
-  chartWidth
-  // 图表超出右边界的量,单位px
-  rightSideOffset = 0
-  // x轴显示的单位数 默认120分钟的数据
-  xAxisUnitsVisiable = 1000 * 60 * 120
-  // 1px 为多少x轴单位
-  unitToXAxisPx = 0
-  // y轴显示的单位数 默认8个
-  yAxisUnitsVisiable = 8
-  // y轴缓冲系数
-  yAxisBuffer = 0.1
-  // 1px 为多少y轴单位
-  unitToYAxisPx = 0
-  // 坐标轴轴标签字体大小
-  axisLabelSize = 10
-  // xy轴刻度线长度
-  scaleHeight
-  // 缩放对象
-  dataZoom = {}
-  // 每根蜡烛的宽度
-  candleWidth
-  // 每根蜡烛的间距
-  candleMargin
-  // 当前鼠标是否按下
-  isMouseDown = false
-  // 上一次移动时鼠标的定位
-  prevMousePosition = {}
-  // 移动中的鼠标定位
-  nowMousePosition = {}
   // 当前光标所在的K线
   cursorKline
-  // 拖动系数
-  dragCoefficient = 1000
   // 数据精度
   digitNumber = 2
   // MA list
@@ -82,13 +40,8 @@ export default class QuoteChart {
 
   // 绘制MA所需的数据
   MAData
-
   // 当前MA中最大的周期,用于计算MA列表需要截取bars上的范围
   maxMAInterval
-  // 正在加载更多数据
-  loadMorePending
-  // 是否还有更多数据?
-  hasMoreData = true
 
   constructor (options) {
     // 依赖生成并注入
@@ -97,15 +50,15 @@ export default class QuoteChart {
     this.controller = new Controller()
     this.inject()
 
-    this.options = options
+    this.options = JSON.parse(JSON.stringify(options))
     this.container = document.querySelector(this.options.el)
     this.domUtils = domUtils(this.container)
     this.view.createElements()
-    this.ctx = this.canvas.getContext('2d')
-    this.canvasUtils = canvasUtils(this.ctx)
+    this.view.ctx = this.view.canvas.getContext('2d')
+    this.canvasUtils = canvasUtils(this.view.ctx)
 
-    this.logo = new Image()
-    this.logo.src = options.logo || logo
+    this.view.logo = new Image()
+    this.view.logo.src = options.logo || logo
     if (options.MA) {
       this.MAOptions = options.MA
     }
