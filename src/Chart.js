@@ -67,16 +67,16 @@ export default class QuoteChart {
   // MA list
   MAOptions = [
     {
-      color: 'rgb(255, 109, 0)',
-      interval: 5
+      color: '#FF00FF',
+      interval: 7
     },
     {
-      color: 'rgb(38, 198, 218)',
-      interval: 10
+      color: '#CF3049',
+      interval: 25
     },
     {
-      color: 'rgb(251, 192, 45)',
-      interval: 30
+      color: '#00CCCC',
+      interval: 99
     }
   ]
 

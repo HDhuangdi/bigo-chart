@@ -1,6 +1,6 @@
 import Color from './Color.js'
 import Constant from './Constant.js'
-import { dateFormat } from './utils.js'
+import { dateFormat, fixNumber } from './utils.js'
 
 export default class View {
   service
@@ -302,7 +302,7 @@ export default class View {
       _value = dateFormat('HH:MM', new Date(value))
     } else {
       // y轴处理
-      _value = _value.toFixed(chart.digitNumber)
+      _value = fixNumber(_value, chart.digitNumber)
     }
 
     chart.canvasUtils.drawText(
@@ -458,25 +458,25 @@ export default class View {
     timeSpan.innerHTML = dateFormat('YYYY/mm/dd HH:MM', new Date(info.time))
     // open
     const openValue = chart.domUtils.getDOMElm('#' + Constant.OPEN_VALUE_ID)
-    openValue.innerHTML = info.open
+    openValue.innerHTML = fixNumber(info.open, chart.digitNumber)
     domUtils.setStyle(openValue, { color: Color[info.status] })
     // low
     const lowValue = chart.domUtils.getDOMElm('#' + Constant.LOW_VALUE_ID)
-    lowValue.innerHTML = info.low
+    lowValue.innerHTML = fixNumber(info.low, chart.digitNumber)
     domUtils.setStyle(lowValue, { color: Color[info.status] })
     // close
     const closeValue = chart.domUtils.getDOMElm('#' + Constant.CLOSE_VALUE_ID)
-    closeValue.innerHTML = info.close
+    closeValue.innerHTML = fixNumber(info.close, chart.digitNumber)
     domUtils.setStyle(closeValue, { color: Color[info.status] })
     // change
     const changeValue = chart.domUtils.getDOMElm('#' + Constant.CHANGE_VALUE_ID)
-    changeValue.innerHTML = info.change
+    changeValue.innerHTML = fixNumber(info.change, 2)
     domUtils.setStyle(changeValue, { color: Color[info.status] })
     // amplitude
     const amplitudeValue = chart.domUtils.getDOMElm(
       '#' + Constant.AMPLITUDE_VALUE_ID
     )
-    amplitudeValue.innerHTML = info.amplitude
+    amplitudeValue.innerHTML = fixNumber(info.amplitude, 2)
     domUtils.setStyle(amplitudeValue, { color: Color[info.status] })
   }
 
@@ -488,7 +488,7 @@ export default class View {
     for (const key in info) {
       const data = info[key]
       const valueSpan = chart.domUtils.getDOMElm(`#__ma-${key}__`)
-      valueSpan.innerHTML = data.value
+      valueSpan.innerHTML = fixNumber(data.value, chart.digitNumber)
       domUtils.setStyle(valueSpan, { color: data.color })
     }
   }
@@ -626,7 +626,7 @@ export default class View {
     chart.canvasUtils.drawText(
       chart.padding.left + chart.chartWidth + chart.scaleHeight,
       y,
-      text,
+      fixNumber(text, chart.digitNumber),
       12 * chart.dpr + 'px ',
       'middle',
       '#fff',

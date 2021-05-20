@@ -1,4 +1,4 @@
-import { getAVG } from './utils'
+import { getAVG, fixNumber } from './utils'
 
 export default class Service {
   view
@@ -77,11 +77,10 @@ export default class Service {
   // 计算chart padding
   calcPadding (data) {
     const chart = this.chart
-
     const { width: textWidth } = chart.canvasUtils.getTextWidthAndHeight(
       chart.axisLabelSize * chart.dpr,
       'sans-serif',
-      Math.max(...data.map((item) => item.high))
+      fixNumber(Math.max(...data.map((item) => item.high)), chart.digitNumber)
     )
     chart.padding.top = 15 * chart.dpr
     chart.padding.bottom = 20 * chart.dpr
