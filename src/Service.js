@@ -353,4 +353,22 @@ export default class Service {
 
     return data
   }
+
+  // 根据坐标寻找K线
+  findKline (x, y) {
+    const { chart, view } = this
+
+    // 鼠标所指的坐标映射
+    const { time, type } = this.mapCoordinateToData(
+      x - view.padding.left,
+      y - view.padding.top
+    )
+
+    // 寻找鼠标所指的k线
+    const [candle] = this.dataZoom.data.filter(
+      (data) => data.time <= time && data.time + chart.klineUnit >= time
+    )
+
+    return { candle, type }
+  }
 }

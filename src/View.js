@@ -680,23 +680,10 @@ export default class View {
   drawCursorLabel (x, y) {
     const chart = this.chart
     const service = this.service
+    const { candle, type } = service.findKline(x, y)
 
-    // 鼠标所指的坐标映射
-    const {
-      time: cursorTime,
-      value,
-      type
-    } = service.mapCoordinateToData(x - this.padding.left, y - this.padding.top)
-
-    // 寻找鼠标所指的k线
-    const [candle] = service.dataZoom.data.filter((data) => {
-      return (
-        data.time <= cursorTime && data.time + chart.klineUnit >= cursorTime
-      )
-    })
     chart.cursorKline = candle
     if (!candle) {
-      chart.cursorKline = undefined
       return x
     }
 
@@ -733,6 +720,7 @@ export default class View {
     )
 
     // 绘制y轴多边形及文字
+    const value = type === 'kline' ? candle.close : candle.volume
     this.drawYAxisLabelPolygon(y, '#2B2F36', '#3D434C', value, type)
 
     return res.x
