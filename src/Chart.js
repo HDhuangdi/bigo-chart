@@ -67,6 +67,10 @@ export default class BigoChart {
       ...this.MAOptions.map((item) => item.interval)
     )
     this.bars = options.bars
+    // 检查是否有交易量
+    if (this.options.hasVolume) {
+      this.options.hasVolume = this.bars.every((bar) => !!bar.volume)
+    }
     this.klineUnit = this.bars[1].time - this.bars[0].time
 
     this.view.highDefinition()

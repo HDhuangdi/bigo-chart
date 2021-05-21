@@ -49,10 +49,10 @@ export default class Service {
 
   // 计算x轴所有标签的坐标
   calcXAxisCoordinate () {
-    const chart = this.chart
+    const { chart } = this
     // 每隔count个画一个刻度
-    const count = 15
-
+    const count = Math.floor(this.dataZoom.data.length / 8)
+    console.log()
     const xAxisData = []
     for (let index = 0; index < chart.bars.length; index += count) {
       xAxisData.push({

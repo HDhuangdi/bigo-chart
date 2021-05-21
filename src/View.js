@@ -23,7 +23,7 @@ export default class View {
   // k线图表高度
   klineChartHeight
   // 交易量图表高度
-  volumeChartHeight = 300
+  volumeChartHeight = 0
   // x轴显示的单位数 默认120分钟的数据
   xAxisUnitsVisiable = 1000 * 60 * 120
   // y轴显示的单位数 默认8个
@@ -166,6 +166,7 @@ export default class View {
     })
     chart.domUtils.appendElms(MAInfo, chart.container)
 
+    if (!chart.options.hasVolume) return
     // vol
     const VolInfo = chart.domUtils.createElm('div', {
       id: Constant.VOL_INFO_CONTAINER_ID
@@ -193,9 +194,19 @@ export default class View {
     this.canvas.style.height = this.canvas.height / this.dpr + 'px'
     this.canvas.style.width = this.canvas.width / this.dpr + 'px'
 
-    const volInfo = this.chart.domUtils.getDOMElm(
+    this.initChart()
+  }
+
+  // 初始化图表
+  initChart () {
+    const { chart } = this
+    const volInfo = chart.domUtils.getDOMElm(
       '#' + Constant.VOL_INFO_CONTAINER_ID
     )
+
+    if (chart.options.hasVolume) {
+      this.volumeChartHeight = 300
+    }
     volInfo.style = `top:${this.canvasHeight - this.volumeChartHeight}px`
   }
 
@@ -220,8 +231,7 @@ export default class View {
 
   // 绘制
   draw () {
-    const { service, controller } = this
-
+    const { service, controller, chart } = this
     // 如果为用户控制dataZoom,就只需updte,否则就自动算dataZoom
     service.calcDataZoom(service.dataZoom.user ? 'update' : 'init')
     this.clearCanvas()
@@ -237,7 +247,9 @@ export default class View {
     this.drawAxis()
     this.drawMAs()
     this.drawCandles()
-    this.drawVolumes()
+    if (chart.options.hasVolume) {
+      this.drawVolumes()
+    }
     this.drawKlineInfo()
     this.drawLastCandlePrice()
     this.drawCursorCross(
@@ -324,9 +336,7 @@ export default class View {
     )
 
     const klineYAxisPosition = service.calcYAxisCoordinate('kline')
-    const volumeYAxisPosition = service.calcYAxisCoordinate('volume')
-
-    volumeYAxisPosition.forEach((data) => {
+    klineYAxisPosition.forEach((data) => {
       // 绘制刻度线
       chart.canvasUtils.drawLine(
         { x: this.padding.left + this.chartWidth, y: data.y },
@@ -345,7 +355,9 @@ export default class View {
       this.drawLabels({ x: undefined, y: data.y }, data.value)
     })
 
-    klineYAxisPosition.forEach((data) => {
+    if (!chart.options.hasVolume) return
+    const volumeYAxisPosition = service.calcYAxisCoordinate('volume')
+    volumeYAxisPosition.forEach((data) => {
       // 绘制刻度线
       chart.canvasUtils.drawLine(
         { x: this.padding.left + this.chartWidth, y: data.y },
@@ -565,7 +577,10 @@ export default class View {
     }
 
     this.drawMAInfo(MAInfo)
-    this.drawVolumeInfo(currKline)
+
+    if (chart.options.hasVolume) {
+      this.drawVolumeInfo(currKline)
+    }
   }
 
   // 绘制蜡烛信息
