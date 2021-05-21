@@ -52,7 +52,6 @@ export default class Service {
     const { chart } = this
     // 每隔count个画一个刻度
     const count = Math.floor(this.dataZoom.data.length / 8)
-    console.log()
     const xAxisData = []
     for (let index = 0; index < chart.bars.length; index += count) {
       xAxisData.push({
@@ -131,13 +130,6 @@ export default class Service {
     view.padding.left = 15 * view.dpr
 
     view.padding.right = textWidth + 10 * view.dpr /** 为了美观 10px 冗余 */
-
-    view.chartHeight =
-      view.canvasHeight - view.padding.top - view.padding.bottom
-
-    view.klineChartHeight = view.chartHeight - view.volumeChartHeight
-
-    view.chartWidth = view.canvasWidth - view.padding.left - view.padding.right
   }
 
   // 手动更新缩放对象

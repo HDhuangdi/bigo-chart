@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>bigo-chart example</title>
     <link rel="stylesheet" type="text/css" href="../dist/chart.css" />
     <style>
       * {
@@ -17,11 +17,8 @@
         cursor: ne-resize;
       }
       #chart {
-        position: absolute;
-        left: 50%;
-        height: 100%;
+        height: 80%;
         width: 100%;
-        transform: translate(-50%);
       }
     </style>
   </head>
@@ -85,7 +82,7 @@
         let time = data.data.T
         let close = Number(data.data.p)
         let volume = Number(data.data.q)
-        chart.subscribeBars(close, volume, time)
+        // chart.subscribeBars(close, volume, time)
       }
     </script>
   </body>

@@ -193,28 +193,48 @@ export default class View {
     this.canvasHeight = this.canvas.height
     this.canvas.style.height = this.canvas.height / this.dpr + 'px'
     this.canvas.style.width = this.canvas.width / this.dpr + 'px'
-
-    this.initChart()
   }
 
   // 初始化图表
   initChart () {
-    const { chart } = this
-    const volInfo = chart.domUtils.getDOMElm(
-      '#' + Constant.VOL_INFO_CONTAINER_ID
-    )
-
-    if (chart.options.hasVolume) {
-      this.volumeChartHeight = 300
-    }
-    volInfo.style = `top:${this.canvasHeight - this.volumeChartHeight}px`
-
+    const { chart, controller } = this
     // logo
     const logoSrc = chart.options.logo
     if (!logoSrc) return
 
     this.logo = new Image()
     this.logo.src = logoSrc
+
+    // 高清化
+    this.highDefinition()
+
+    // 事件注册
+    controller.registerMouseEvents()
+
+    this.draw()
+  }
+
+  // 计算图表宽高数据
+  resize () {
+    const { chart, service } = this
+
+    service.calcPadding(chart.bars)
+
+    this.chartHeight =
+      this.canvasHeight - this.padding.top - this.padding.bottom
+    this.chartWidth = this.canvasWidth - this.padding.left - this.padding.right
+
+    if (chart.options.hasVolume) {
+      this.volumeChartHeight = this.chartHeight / 3
+    }
+    this.klineChartHeight = this.chartHeight - this.volumeChartHeight
+
+    const volInfo = chart.domUtils.getDOMElm(
+      '#' + Constant.VOL_INFO_CONTAINER_ID
+    )
+    volInfo.style = `top:${
+      (this.canvasHeight - this.volumeChartHeight) / this.dpr
+    }px`
   }
 
   // 清空画布
@@ -239,6 +259,8 @@ export default class View {
   // 绘制
   draw () {
     const { service, controller } = this
+
+    this.resize()
     // 如果为用户控制dataZoom,就只需updte,否则就自动算dataZoom
     service.calcDataZoom(service.dataZoom.user ? 'update' : 'init')
     this.clearCanvas()

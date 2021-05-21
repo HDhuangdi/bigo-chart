@@ -70,11 +70,7 @@ export default class BigoChart {
     }
     this.tickerUnit = this.bars[1].time - this.bars[0].time
 
-    this.view.highDefinition()
-    this.service.calcPadding(this.bars)
-    this.controller.registerMouseEvents()
-    this.service.calcDataZoom('init')
-    this.view.draw()
+    this.view.initChart()
   }
 
   // 依赖注入
