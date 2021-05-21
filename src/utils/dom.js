@@ -1,5 +1,5 @@
-export function domUtils(container) {
-  function createElm(tag, attrs) {
+export function domUtils (container) {
+  function createElm (tag, attrs) {
     const el = document.createElement(tag)
     for (const key in attrs) {
       if (Object.prototype.hasOwnProperty.call(attrs, key)) {
@@ -9,7 +9,7 @@ export function domUtils(container) {
     return el
   }
 
-  function setStyle(elm, styles) {
+  function setStyle (elm, styles) {
     for (const key in styles) {
       if (Object.prototype.hasOwnProperty.call(styles, key)) {
         elm.style[key] = styles[key]
@@ -17,7 +17,7 @@ export function domUtils(container) {
     }
   }
 
-  function appendElms(elms, parent) {
+  function appendElms (elms, parent) {
     const _parent = parent || container
     if (Array.isArray(elms)) {
       elms.forEach((elm) => _parent.appendChild(elm))
@@ -26,7 +26,7 @@ export function domUtils(container) {
     }
   }
 
-  function getDOMElm(selector, container, ...args) {
+  function getDOMElm (selector, container, ...args) {
     let elm = document.querySelector(selector)
     if (!elm) {
       elm = createElm(...args)
@@ -39,6 +39,6 @@ export function domUtils(container) {
     createElm,
     appendElms,
     setStyle,
-    getDOMElm,
+    getDOMElm
   }
 }
