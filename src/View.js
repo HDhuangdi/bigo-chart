@@ -1,6 +1,6 @@
 import Color from './Color.js'
 import Constant from './Constant.js'
-import { dateFormat, fixNumber } from './utils.js'
+import { dateFormat, fixNumber } from './utils'
 
 export default class View {
   service
@@ -207,7 +207,6 @@ export default class View {
 
     // 高清化
     this.highDefinition()
-
     // 事件注册
     controller.registerMouseEvents()
 
@@ -259,7 +258,6 @@ export default class View {
   // 绘制
   draw () {
     const { service, controller } = this
-
     this.resize()
     // 如果为用户控制dataZoom,就只需updte,否则就自动算dataZoom
     service.calcDataZoom(service.dataZoom.user ? 'update' : 'init')
@@ -363,8 +361,8 @@ export default class View {
       '#34383F'
     )
 
-    const klineYAxisPosition = service.calcYAxisCoordinate('kline')
-    klineYAxisPosition.forEach((data) => {
+    const candleYAxisPosition = service.calcYAxisCoordinate('candle')
+    candleYAxisPosition.forEach((data) => {
       // 绘制刻度线
       chart.canvasUtils.drawLine(
         { x: this.padding.left + this.chartWidth, y: data.y },
@@ -410,17 +408,23 @@ export default class View {
     const chart = this.chart
 
     let _value = value
+    const textPos = { x: 0, y: 0 }
     if (potision.x) {
       // x轴处理
       _value = dateFormat('HH:MM', new Date(value))
+      textPos.x = potision.x
+      textPos.y = this.chartHeight + this.padding.top + this.scaleHeight
     } else {
       // y轴处理
       _value = fixNumber(_value, chart.priceDigitNumber)
+      textPos.x =
+        this.padding.left + this.chartWidth + this.scaleHeight + 2 * this.dpr
+      textPos.y = potision.y
     }
 
     chart.canvasUtils.drawText(
-      potision.x || this.padding.left + this.chartWidth + this.scaleHeight,
-      potision.y || this.chartHeight + this.padding.top + this.scaleHeight,
+      textPos.x,
+      textPos.y,
       _value,
       this.axisLabelSize * this.dpr + 'px sans-serif',
       potision.x ? 'top' : 'middle',
@@ -701,7 +705,7 @@ export default class View {
   drawCursorLabel (x, y) {
     const chart = this.chart
     const service = this.service
-    const { ticker, type } = service.findTicker(x, y)
+    const { ticker, type, value } = service.findTicker(x, y)
 
     chart.cursorTicker = ticker
     if (!ticker) {
@@ -741,7 +745,6 @@ export default class View {
     )
 
     // 绘制y轴多边形及文字
-    const value = type === 'kline' ? ticker.close : ticker.volume
     this.drawYAxisLabelPolygon(y, '#2B2F36', '#3D434C', value, type)
 
     return res.x
@@ -776,12 +779,25 @@ export default class View {
         y: y + yReactHeight / 2
       }
     ]
+    const _text =
+      type === 'price' ? fixNumber(text, chart.priceDigitNumber) : text
+    const { width: textWidth } = chart.canvasUtils.getTextWidthAndHeight(
+      this.axisLabelSize * this.dpr,
+      'sans-serif',
+      _text
+    )
+
     chart.canvasUtils.drawPolygon(points, 'fill', fillStyle, 1 * this.dpr)
     chart.canvasUtils.drawPolygon(points, 'stroke', strokeStyle, 1 * this.dpr)
+
     chart.canvasUtils.drawText(
-      this.padding.left + this.chartWidth + this.scaleHeight,
+      this.padding.left +
+        this.chartWidth +
+        this.scaleHeight +
+        this.padding.right / 2 -
+        textWidth / 2,
       y,
-      type === 'price' ? fixNumber(text, chart.priceDigitNumber) : text,
+      _text,
       12 * this.dpr + 'px ',
       'middle',
       '#fff',

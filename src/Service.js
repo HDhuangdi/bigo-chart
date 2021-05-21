@@ -72,7 +72,7 @@ export default class Service {
   }
 
   // 计算y轴所有标签的坐标
-  calcYAxisCoordinate (type = 'kline') {
+  calcYAxisCoordinate (type = 'candle') {
     const { view } = this
 
     let intervalValue
@@ -80,7 +80,7 @@ export default class Service {
     // volume标签可以画到的最高位置
     const volumeLabelEndValue = this.highestVolume
 
-    if (type === 'kline') {
+    if (type === 'candle') {
       interval = view.chartYAxisUnitsVisiable
       intervalValue =
         (this.dataZoom.klineYAxisEndValue -
@@ -97,7 +97,7 @@ export default class Service {
 
     for (let index = 0; index < interval; index++) {
       let value
-      if (type === 'kline') {
+      if (type === 'candle') {
         value = this.dataZoom.klineYAxisStartValue + index * intervalValue
       } else {
         value = this.dataZoom.volumeYAxisStartValue + index * intervalValue
@@ -121,15 +121,15 @@ export default class Service {
       view.axisLabelSize * view.dpr,
       'sans-serif',
       fixNumber(
-        Math.max(...data.map((item) => item.high)),
-        chart.priceDigitNumber
+        Math.max(...data.map((item) => item.volume)),
+        chart.volumeDigitNumber
       )
     )
     view.padding.top = 15 * view.dpr
     view.padding.bottom = 20 * view.dpr
     view.padding.left = 15 * view.dpr
 
-    view.padding.right = textWidth + 10 * view.dpr /** 为了美观 10px 冗余 */
+    view.padding.right = textWidth
   }
 
   // 手动更新缩放对象
@@ -286,7 +286,7 @@ export default class Service {
   }
 
   // 数据 => 坐标 映射
-  mapDataToCoordinate (time, value, type = 'kline') {
+  mapDataToCoordinate (time, value, type = 'candle') {
     const { view } = this
 
     const position = {
@@ -299,7 +299,7 @@ export default class Service {
       ((time - this.dataZoom.xAxisStartValue) / this.unitToXAxisPx).toFixed(1) *
         1
 
-    if (type === 'kline') {
+    if (type === 'candle') {
       const height =
         (
           (value - this.dataZoom.klineYAxisStartValue) /
@@ -361,7 +361,7 @@ export default class Service {
     const { chart, view } = this
 
     // 鼠标所指的坐标映射
-    const { time, type } = this.mapCoordinateToData(
+    const { time, value, type } = this.mapCoordinateToData(
       x - view.padding.left,
       y - view.padding.top
     )
@@ -371,6 +371,6 @@ export default class Service {
       (data) => data.time <= time && data.time + chart.tickerUnit >= time
     )
 
-    return { ticker, type }
+    return { ticker, value, type }
   }
 }

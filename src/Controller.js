@@ -77,6 +77,8 @@ export default class Controller {
 
   // 滚轮事件
   onMouseWeel (e) {
+    // 屏蔽页面滚动
+    e.preventDefault()
     const { view, service } = this
     service.dataZoom.user = true
 

@@ -1,5 +1,5 @@
-import canvasUtils, { domUtils } from './utils.js'
-import './chart.css'
+import { domUtils, canvasUtils, warn } from './utils'
+import './styles/chart.css'
 import Controller from './Controller'
 import Service from './Service'
 import View from './View'
@@ -51,8 +51,12 @@ export default class BigoChart {
     this.controller = new Controller()
     this.inject()
 
-    this.options = options
+    this.checkOptions(options)
     this.container = document.querySelector(this.options.el)
+
+    if (!this.container) {
+      warn('invalid dom')
+    }
     this.domUtils = domUtils(this.container)
     this.view.createElements()
     this.canvasUtils = canvasUtils(this.view.ctx)
@@ -70,7 +74,7 @@ export default class BigoChart {
     }
     this.tickerUnit = this.bars[1].time - this.bars[0].time
 
-    this.view.initChart()
+    this.view.initChart() // 17ms
   }
 
   // 依赖注入
@@ -78,6 +82,14 @@ export default class BigoChart {
     this.service.inject(this.view, this.controller, this)
     this.controller.inject(this.view, this.service, this)
     this.view.inject(this.service, this.controller, this)
+  }
+
+  // 检查配置项
+  checkOptions (options) {
+    if (!options || !Object.keys(options).length) {
+      warn('invalid options')
+    }
+    this.options = options
   }
 
   // 订阅数据
