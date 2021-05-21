@@ -54,13 +54,16 @@ export default class Controller {
       service.dataZoom.xAxisEndValue + this.dragCoefficient * diffX
 
     // 分页 提前100个k线单位开始请求
-    if (newDataZoomXAxisStartValue - 100 * chart.klineUnit <= firstCandleTime) {
+    if (
+      newDataZoomXAxisStartValue - 100 * chart.tickerUnit <=
+      firstCandleTime
+    ) {
       service.loadMoreData()
       return
     }
 
     // 更新拖动系数
-    this.dragCoefficient = (view.xAxisUnitsVisiable / chart.klineUnit) * 40
+    this.dragCoefficient = (view.xAxisUnitsVisiable / chart.tickerUnit) * 40
     service.updateDataZoom(newDataZoomXAxisStartValue, newDataZoomXAxisEndValue)
 
     view.draw()

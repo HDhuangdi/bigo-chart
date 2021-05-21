@@ -1,6 +1,5 @@
 import canvasUtils, { domUtils } from './utils.js'
 import './chart.css'
-import logo from './logo.png'
 import Controller from './Controller'
 import Service from './Service'
 import View from './View'
@@ -16,10 +15,10 @@ export default class BigoChart {
 
   canvasUtils
   domUtils
-  // k线单位,一根k线为多少时间
-  klineUnit
-  // 当前光标所在的K线
-  cursorKline
+  // 行情单位,一根k线为多少时间
+  tickerUnit
+  // 当前光标所在的行情信息
+  cursorTicker
   // 价格数据精度
   priceDigitNumber = 2
   // 交易量数据精度
@@ -58,20 +57,18 @@ export default class BigoChart {
     this.view.createElements()
     this.canvasUtils = canvasUtils(this.view.ctx)
 
-    this.view.logo = new Image()
-    this.view.logo.src = options.logo || logo
     if (options.MA) {
       this.MAOptions = options.MA
     }
     this.maxMAInterval = Math.max(
       ...this.MAOptions.map((item) => item.interval)
     )
-    this.bars = options.bars
+    this.bars = options.bars.sort((a, b) => a.time - b.time)
     // 检查是否有交易量
     if (this.options.hasVolume) {
       this.options.hasVolume = this.bars.every((bar) => !!bar.volume)
     }
-    this.klineUnit = this.bars[1].time - this.bars[0].time
+    this.tickerUnit = this.bars[1].time - this.bars[0].time
 
     this.view.highDefinition()
     this.service.calcPadding(this.bars)
@@ -98,7 +95,7 @@ export default class BigoChart {
       volume: lastCandle.volume,
       time: lastCandle.time
     }
-    if (time - lastCandle.time >= this.klineUnit) {
+    if (time - lastCandle.time >= this.tickerUnit) {
       // new candle
       candleToUpdate.open = lastCandle.close
       candleToUpdate.high = value

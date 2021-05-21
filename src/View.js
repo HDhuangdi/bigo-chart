@@ -208,6 +208,13 @@ export default class View {
       this.volumeChartHeight = 300
     }
     volInfo.style = `top:${this.canvasHeight - this.volumeChartHeight}px`
+
+    // logo
+    const logoSrc = chart.options.logo
+    if (!logoSrc) return
+
+    this.logo = new Image()
+    this.logo.src = logoSrc
   }
 
   // 清空画布
@@ -231,27 +238,16 @@ export default class View {
 
   // 绘制
   draw () {
-    const { service, controller, chart } = this
+    const { service, controller } = this
     // 如果为用户控制dataZoom,就只需updte,否则就自动算dataZoom
     service.calcDataZoom(service.dataZoom.user ? 'update' : 'init')
     this.clearCanvas()
     this.drawBg()
-    // 图片的特殊处理
-    if (this.logo.complete) {
-      this.drawLogo()
-    } else {
-      this.logo.onload = () => {
-        this.drawLogo()
-      }
-    }
     this.drawAxis()
     this.drawMAs()
-    this.drawCandles()
-    if (chart.options.hasVolume) {
-      this.drawVolumes()
-    }
-    this.drawKlineInfo()
-    this.drawLastCandlePrice()
+    this.drawTicker()
+    this.drawTickerInfo()
+    this.drawLastTickerPrice()
     this.drawCursorCross(
       controller.nowMousePosition.x,
       controller.nowMousePosition.y
@@ -265,6 +261,16 @@ export default class View {
     this.ctx.beginPath()
     this.ctx.fillStyle = chart.options.backgroundColor || '#191b20'
     this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight)
+
+    if (!this.logo) return
+    // 图片的特殊处理
+    if (this.logo.complete) {
+      this.drawLogo()
+    } else {
+      this.logo.onload = () => {
+        this.drawLogo()
+      }
+    }
   }
 
   // 绘制坐标轴
@@ -401,42 +407,35 @@ export default class View {
     )
   }
 
-  // 绘制蜡烛图
-  drawCandles () {
-    this.service.dataZoom.realData.forEach((candleData, index) => {
-      this.drawCandle(candleData, index)
+  // 绘制行情图
+  drawTicker () {
+    const { service, chart } = this
+
+    service.dataZoom.realData.forEach((ticker) => {
+      this.drawCandle(ticker)
+      if (chart.options.hasVolume) {
+        this.drawVolume(ticker)
+      }
     })
   }
 
   // 绘制单根蜡烛
-  drawCandle (candleData) {
+  drawCandle (ticker) {
     const service = this.service
     const chart = this.chart
 
-    // 格式化k线数据
-    service.formatKlineData(candleData)
+    // 格式化行情数据
+    service.formatTickerData(ticker)
 
-    const status = candleData.status
+    const status = ticker.status
 
-    const openPosition = service.mapDataToCoordinate(
-      candleData.time,
-      candleData.open
-    )
-    const closePosition = service.mapDataToCoordinate(
-      candleData.time,
-      candleData.close
-    )
-    const highPosition = service.mapDataToCoordinate(
-      candleData.time,
-      candleData.high
-    )
-    const lowPosition = service.mapDataToCoordinate(
-      candleData.time,
-      candleData.low
-    )
-    this.candleMargin = chart.klineUnit / 20 / service.unitToXAxisPx // 蜡烛间距为 1/20 k线单位所对应的宽度
+    const openPosition = service.mapDataToCoordinate(ticker.time, ticker.open)
+    const closePosition = service.mapDataToCoordinate(ticker.time, ticker.close)
+    const highPosition = service.mapDataToCoordinate(ticker.time, ticker.high)
+    const lowPosition = service.mapDataToCoordinate(ticker.time, ticker.low)
+    this.candleMargin = chart.tickerUnit / 20 / service.unitToXAxisPx // 蜡烛间距为 1/20 k线单位所对应的宽度
     this.candleWidth =
-      chart.klineUnit / service.unitToXAxisPx - 2 * this.candleMargin
+      chart.tickerUnit / service.unitToXAxisPx - 2 * this.candleMargin
 
     let x =
       status === 'up'
@@ -476,16 +475,16 @@ export default class View {
   // 绘制交易量
   drawVolumes () {
     const { service } = this
-    service.dataZoom.realData.forEach((kline) => this.drawVolume(kline))
+    service.dataZoom.realData.forEach((ticker) => this.drawVolume(ticker))
   }
 
-  // 绘制单根交易量
-  drawVolume (kline) {
+  // 绘制某个行情的交易量
+  drawVolume (ticker) {
     const { service, chart } = this
 
     const { x, y } = service.mapDataToCoordinate(
-      kline.time,
-      kline.volume,
+      ticker.time,
+      ticker.volume,
       'volume'
     )
 
@@ -515,7 +514,7 @@ export default class View {
       y,
       volumeWidth,
       volumeHeight,
-      Color[kline.status + 'Lowlight']
+      Color[ticker.status + 'Lowlight']
     )
   }
 
@@ -562,10 +561,10 @@ export default class View {
     })
   }
 
-  // 绘制当前K线信息
-  drawKlineInfo () {
+  // 绘制当前行情信息
+  drawTickerInfo () {
     const { chart } = this
-    const currKline = chart.cursorKline || chart.bars[chart.bars.length - 1]
+    const currKline = chart.cursorTicker || chart.bars[chart.bars.length - 1]
     this.drawCandleInfo(currKline)
     const MAInfo = {}
     for (const option of chart.MAOptions) {
@@ -680,18 +679,18 @@ export default class View {
   drawCursorLabel (x, y) {
     const chart = this.chart
     const service = this.service
-    const { candle, type } = service.findKline(x, y)
+    const { ticker, type } = service.findTicker(x, y)
 
-    chart.cursorKline = candle
-    if (!candle) {
+    chart.cursorTicker = ticker
+    if (!ticker) {
       return x
     }
 
     // x轴标签绘制
     // 横坐标强制锁定寻找到的k线的中间部分
-    const res = service.mapDataToCoordinate(candle.time, 0)
+    const res = service.mapDataToCoordinate(ticker.time, 0)
 
-    const formatedTime = dateFormat('YYYY/mm/dd HH:MM', new Date(candle.time))
+    const formatedTime = dateFormat('YYYY/mm/dd HH:MM', new Date(ticker.time))
     // 绘制x轴矩形
     const { width: textWidth, height: textHeight } =
       chart.canvasUtils.getTextWidthAndHeight(
@@ -720,7 +719,7 @@ export default class View {
     )
 
     // 绘制y轴多边形及文字
-    const value = type === 'kline' ? candle.close : candle.volume
+    const value = type === 'kline' ? ticker.close : ticker.volume
     this.drawYAxisLabelPolygon(y, '#2B2F36', '#3D434C', value, type)
 
     return res.x
@@ -768,8 +767,8 @@ export default class View {
     )
   }
 
-  // 在y轴高亮屏幕中最后一根k线的实时价
-  drawLastCandlePrice () {
+  // 在y轴高亮屏幕中最后一根行情的实时价
+  drawLastTickerPrice () {
     const service = this.service
     const lastCandle = service.dataZoom.data[service.dataZoom.data.length - 1]
     const { y } = service.mapDataToCoordinate(lastCandle.time, lastCandle.close)

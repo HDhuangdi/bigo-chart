@@ -7,7 +7,7 @@ export default class Service {
   // 1px 为多少x轴单位
   unitToXAxisPx = 0
   // 1px 为多少y轴单位 k线图
-  klineUnitToYAxisPx = 0
+  candleUnitToYAxisPx = 0
   // 1px 为多少y轴单位 交易量图
   volumeUnitToYAxisPx = 0
   highestVolume
@@ -38,7 +38,7 @@ export default class Service {
     const { view } = this
 
     // 根据各自的图表高度和y轴范围算出1px为多少y轴单位
-    this.klineUnitToYAxisPx =
+    this.candleUnitToYAxisPx =
       (this.dataZoom.klineYAxisEndValue - this.dataZoom.klineYAxisStartValue) /
       view.klineChartHeight
     this.volumeUnitToYAxisPx =
@@ -164,7 +164,7 @@ export default class Service {
     if (type === 'init') {
       // x轴更新
       const newDataZoomXAxisEndValue =
-        chart.bars[chart.bars.length - 1].time + 3 * chart.klineUnit
+        chart.bars[chart.bars.length - 1].time + 3 * chart.tickerUnit
 
       const newDataZoomXAxisStartValue =
         newDataZoomXAxisEndValue - view.xAxisUnitsVisiable
@@ -184,8 +184,8 @@ export default class Service {
     // 真正截取的data (为了拖动连贯性,需要前后多拿l个)
     this.dataZoom.realData = chart.bars.filter(
       (bar) =>
-        bar.time <= this.dataZoom.xAxisEndValue + chart.klineUnit &&
-        bar.time >= this.dataZoom.xAxisStartValue - chart.klineUnit
+        bar.time <= this.dataZoom.xAxisEndValue + chart.tickerUnit &&
+        bar.time >= this.dataZoom.xAxisStartValue - chart.tickerUnit
     )
 
     // y轴更新
@@ -243,22 +243,23 @@ export default class Service {
     chart.MAData = chart.bars.filter(
       (bar) =>
         bar.time <=
-          this.dataZoom.xAxisEndValue + chart.maxMAInterval * chart.klineUnit &&
+          this.dataZoom.xAxisEndValue +
+            chart.maxMAInterval * chart.tickerUnit &&
         bar.time >=
-          this.dataZoom.xAxisStartValue - chart.maxMAInterval * chart.klineUnit
+          this.dataZoom.xAxisStartValue - chart.maxMAInterval * chart.tickerUnit
     )
   }
 
-  // 格式化k线数据
-  formatKlineData (kline) {
+  // 格式化行情数据
+  formatTickerData (ticker) {
     // 状态
-    kline.status = kline.close >= kline.open ? 'up' : 'down'
+    ticker.status = ticker.close >= ticker.open ? 'up' : 'down'
     // 振幅
-    kline.amplitude =
-      (((kline.high - kline.low) * 100) / kline.low).toFixed(2) + '%'
+    ticker.amplitude =
+      (((ticker.high - ticker.low) * 100) / ticker.low).toFixed(2) + '%'
     // 涨跌幅
-    kline.change =
-      (((kline.close - kline.high) * 100) / kline.low).toFixed(2) + '%'
+    ticker.change =
+      (((ticker.close - ticker.high) * 100) / ticker.low).toFixed(2) + '%'
   }
 
   // 分页逻辑
@@ -267,17 +268,26 @@ export default class Service {
 
     if (this.loadMorePending || !this.hasMoreData) return
 
-    const firstCandleTime = chart.bars[0].time
+    const firstTickerTime = chart.bars[0].time
 
     if (chart.options.loadMore) {
       this.loadMorePending = true
-      const newbars = await chart.options.loadMore(firstCandleTime)
+
+      const newbars = await chart.options.loadMore(firstTickerTime)
       this.loadMorePending = false
       // empty data
       if (!newbars) {
         this.hasMoreData = false
         return
       }
+
+      newbars.sort((a, b) => a.time - b.time)
+      const newLastTicker = newbars[newbars.length - 1].time
+      // 防止重复
+      if (newLastTicker.time === firstTickerTime.time) {
+        newbars.splice(newbars.length - 1, 1)
+      }
+
       chart.bars = newbars.concat(chart.bars)
       view.draw()
     }
@@ -301,7 +311,7 @@ export default class Service {
       const height =
         (
           (value - this.dataZoom.klineYAxisStartValue) /
-          this.klineUnitToYAxisPx
+          this.candleUnitToYAxisPx
         ).toFixed(1) * 1
       position.y = view.padding.top + view.klineChartHeight - height
     } else {
@@ -346,7 +356,7 @@ export default class Service {
       data.value =
         (
           this.dataZoom.klineYAxisStartValue +
-          yDiff * this.klineUnitToYAxisPx
+          yDiff * this.candleUnitToYAxisPx
         ).toFixed(chart.priceDigitNumber) * 1
       data.type = 'price'
     }
@@ -355,7 +365,7 @@ export default class Service {
   }
 
   // 根据坐标寻找K线
-  findKline (x, y) {
+  findTicker (x, y) {
     const { chart, view } = this
 
     // 鼠标所指的坐标映射
@@ -364,11 +374,11 @@ export default class Service {
       y - view.padding.top
     )
 
-    // 寻找鼠标所指的k线
-    const [candle] = this.dataZoom.data.filter(
-      (data) => data.time <= time && data.time + chart.klineUnit >= time
+    // TODO (有点小问题) 寻找鼠标所指的k线
+    const [ticker] = this.dataZoom.data.filter(
+      (data) => data.time <= time && data.time + chart.tickerUnit >= time
     )
 
-    return { candle, type }
+    return { ticker, type }
   }
 }
