@@ -6,8 +6,11 @@ export default class Service {
   chart
   // 1px 为多少x轴单位
   unitToXAxisPx = 0
-  // 1px 为多少y轴单位
-  unitToYAxisPx = 0
+  // 1px 为多少y轴单位 k线图
+  klineUnitToYAxisPx = 0
+  // 1px 为多少y轴单位 交易量图
+  volumeUnitToYAxisPx = 0
+  highestVolume
   // 缩放对象
   dataZoom = {}
   // 正在加载更多数据
@@ -34,10 +37,14 @@ export default class Service {
   calcUnitToYAxisPx () {
     const { view } = this
 
-    // 根据chartHeight和y轴范围算出1px为多少y轴单位
-    this.unitToYAxisPx =
-      (this.dataZoom.yAxisEndValue - this.dataZoom.yAxisStartValue) /
-      view.chartHeight
+    // 根据各自的图表高度和y轴范围算出1px为多少y轴单位
+    this.klineUnitToYAxisPx =
+      (this.dataZoom.klineYAxisEndValue - this.dataZoom.klineYAxisStartValue) /
+      view.klineChartHeight
+    this.volumeUnitToYAxisPx =
+      (this.dataZoom.volumeYAxisEndValue -
+        this.dataZoom.volumeYAxisStartValue) /
+      view.volumeChartHeight
   }
 
   // 计算x轴所有标签的坐标
@@ -66,22 +73,42 @@ export default class Service {
   }
 
   // 计算y轴所有标签的坐标
-  calcYAxisCoordinate () {
+  calcYAxisCoordinate (type = 'kline') {
     const { view } = this
 
-    const intervalValue =
-      (this.dataZoom.yAxisEndValue - this.dataZoom.yAxisStartValue) /
-      (view.yAxisUnitsVisiable - 1)
+    let intervalValue
+    let interval
+    // volume标签可以画到的最高位置
+    const volumeLabelEndValue = this.highestVolume
+
+    if (type === 'kline') {
+      interval = view.chartYAxisUnitsVisiable
+      intervalValue =
+        (this.dataZoom.klineYAxisEndValue -
+          this.dataZoom.klineYAxisStartValue) /
+        (view.chartYAxisUnitsVisiable - 1)
+    } else {
+      interval = view.volumeYAxisUnitsVisiable
+      intervalValue =
+        (volumeLabelEndValue - this.dataZoom.volumeYAxisStartValue) /
+        (view.volumeYAxisUnitsVisiable - 1)
+    }
+
     const yAxisData = []
-    for (let index = 0; index < view.yAxisUnitsVisiable; index++) {
-      const res = this.mapDataToCoordinate(
-        0,
-        this.dataZoom.yAxisStartValue + index * intervalValue
-      )
+
+    for (let index = 0; index < interval; index++) {
+      let value
+      if (type === 'kline') {
+        value = this.dataZoom.klineYAxisStartValue + index * intervalValue
+      } else {
+        value = this.dataZoom.volumeYAxisStartValue + index * intervalValue
+      }
+      // 将数据映射成坐标
+      const res = this.mapDataToCoordinate(0, value, type)
       yAxisData.push({
         x: view.padding.left + view.chartWidth,
         y: res.y,
-        value: this.dataZoom.yAxisStartValue + index * intervalValue
+        value
       })
     }
     return yAxisData
@@ -94,15 +121,22 @@ export default class Service {
     const { width: textWidth } = chart.canvasUtils.getTextWidthAndHeight(
       view.axisLabelSize * view.dpr,
       'sans-serif',
-      fixNumber(Math.max(...data.map((item) => item.high)), chart.digitNumber)
+      fixNumber(
+        Math.max(...data.map((item) => item.high)),
+        chart.priceDigitNumber
+      )
     )
     view.padding.top = 15 * view.dpr
     view.padding.bottom = 20 * view.dpr
     view.padding.left = 15 * view.dpr
 
     view.padding.right = textWidth + 10 * view.dpr /** 为了美观 10px 冗余 */
+
     view.chartHeight =
       view.canvasHeight - view.padding.top - view.padding.bottom
+
+    view.klineChartHeight = view.chartHeight - view.volumeChartHeight
+
     view.chartWidth = view.canvasWidth - view.padding.left - view.padding.right
   }
 
@@ -140,26 +174,38 @@ export default class Service {
         this.dataZoom.xAxisEndValue - this.dataZoom.xAxisStartValue
     }
 
-    // data  需要前后多拿maxMAInterval个
+    // 实际在屏幕上显示出的data
     this.dataZoom.data = chart.bars.filter(
       (bar) =>
         bar.time <= this.dataZoom.xAxisEndValue &&
         bar.time >= this.dataZoom.xAxisStartValue
     )
+
+    // 真正截取的data (为了拖动连贯性,需要前后多拿l个)
+    this.dataZoom.realData = chart.bars.filter(
+      (bar) =>
+        bar.time <= this.dataZoom.xAxisEndValue + chart.klineUnit &&
+        bar.time >= this.dataZoom.xAxisStartValue - chart.klineUnit
+    )
+
     // y轴更新
     const sortedData = Array.prototype
-      .concat([], this.dataZoom.data)
+      .concat([], this.dataZoom.realData)
       .sort((a, b) => b.high - a.high)
-    // y轴最高的数据
+    // 行情y轴最高/最低的数据
     const highest = sortedData[0].high
     sortedData.sort((a, b) => a.low - b.low)
-    // y轴最低的数据
     const lowest = sortedData[0].low
-
-    this.dataZoom.yAxisEndValue =
+    this.dataZoom.klineYAxisEndValue =
       highest + (highest - lowest) * this.yAxisBuffer
-    this.dataZoom.yAxisStartValue =
+    this.dataZoom.klineYAxisStartValue =
       lowest - (highest - lowest) * this.yAxisBuffer
+
+    // 交易量y轴最高/最低的数据
+    this.highestVolume = Math.max(...sortedData.map((item) => item.volume))
+    this.dataZoom.volumeYAxisEndValue =
+      this.highestVolume + this.highestVolume * this.yAxisBuffer
+    this.dataZoom.volumeYAxisStartValue = 0
   }
 
   // 计算MA points
@@ -180,7 +226,7 @@ export default class Service {
           MAPoints.push({
             value:
               getAVG(reduce.map((item) => item.value)).toFixed(
-                chart.digitNumber
+                chart.priceDigitNumber
               ) * 1,
             time: point.time
           })
@@ -238,7 +284,7 @@ export default class Service {
   }
 
   // 数据 => 坐标 映射
-  mapDataToCoordinate (time, value) {
+  mapDataToCoordinate (time, value, type = 'kline') {
     const { view } = this
 
     const position = {
@@ -251,12 +297,21 @@ export default class Service {
       ((time - this.dataZoom.xAxisStartValue) / this.unitToXAxisPx).toFixed(1) *
         1
 
-    const height =
-      ((value - this.dataZoom.yAxisStartValue) / this.unitToYAxisPx).toFixed(
-        1
-      ) * 1
-
-    position.y = view.padding.top + view.chartHeight - height
+    if (type === 'kline') {
+      const height =
+        (
+          (value - this.dataZoom.klineYAxisStartValue) /
+          this.klineUnitToYAxisPx
+        ).toFixed(1) * 1
+      position.y = view.padding.top + view.klineChartHeight - height
+    } else {
+      const height =
+        (
+          (value - this.dataZoom.volumeYAxisStartValue) /
+          this.volumeUnitToYAxisPx
+        ).toFixed(1) * 1
+      position.y = view.padding.top + view.chartHeight - height
+    }
 
     return position
   }
@@ -267,17 +322,35 @@ export default class Service {
 
     const data = {
       time: 0,
-      value: 0
+      value: 0,
+      type: ''
     }
 
     data.time = Math.floor(
       this.dataZoom.xAxisStartValue + x * this.unitToXAxisPx
     )
-    data.value =
-      (
-        this.dataZoom.yAxisStartValue +
-        (view.chartHeight - y) * this.unitToYAxisPx
-      ).toFixed(chart.digitNumber) * 1
+
+    let yDiff = view.klineChartHeight - y
+
+    if (yDiff < 0) {
+      // TODO volume chart
+      data.type = 'volume'
+      yDiff = view.chartHeight - y
+      data.value =
+        (
+          this.dataZoom.volumeYAxisStartValue +
+          yDiff * this.volumeUnitToYAxisPx
+        ).toFixed(chart.priceDigitNumber) * 1
+    } else {
+      // kline chart
+      data.value =
+        (
+          this.dataZoom.klineYAxisStartValue +
+          yDiff * this.klineUnitToYAxisPx
+        ).toFixed(chart.priceDigitNumber) * 1
+      data.type = 'price'
+    }
+
     return data
   }
 }

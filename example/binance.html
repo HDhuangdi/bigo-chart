@@ -59,6 +59,7 @@
         chart = new BigoChart({
           el: "#chart",
           bars,
+          volumeSymbol: "ETH",
           loadMore: async (endTime) => getKline(endTime),
         })
       })

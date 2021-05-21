@@ -20,8 +20,10 @@ export default class BigoChart {
   klineUnit
   // 当前光标所在的K线
   cursorKline
-  // 数据精度
-  digitNumber = 2
+  // 价格数据精度
+  priceDigitNumber = 2
+  // 交易量数据精度
+  volumeDigitNumer = 3
   // MA list
   MAOptions = [
     {
@@ -54,7 +56,6 @@ export default class BigoChart {
     this.container = document.querySelector(this.options.el)
     this.domUtils = domUtils(this.container)
     this.view.createElements()
-    this.view.ctx = this.view.canvas.getContext('2d')
     this.canvasUtils = canvasUtils(this.view.ctx)
 
     this.view.logo = new Image()
@@ -90,7 +91,7 @@ export default class BigoChart {
       high: lastCandle.high,
       low: lastCandle.low,
       close: value,
-      volume,
+      volume: lastCandle.volume,
       time: lastCandle.time
     }
     if (time - lastCandle.time >= this.klineUnit) {
@@ -99,6 +100,7 @@ export default class BigoChart {
       candleToUpdate.high = value
       candleToUpdate.low = value
       candleToUpdate.time = time
+      candleToUpdate.volume = volume
       this.bars.push(candleToUpdate)
     } else {
       // update last candle
@@ -108,6 +110,7 @@ export default class BigoChart {
       if (value < lastCandle.low) {
         candleToUpdate.low = value
       }
+      candleToUpdate.volume += volume
       this.bars[this.bars.length - 1] = candleToUpdate
     }
     this.view.draw()

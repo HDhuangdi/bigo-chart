@@ -16,14 +16,20 @@ export default class View {
   canvasHeight
   // ccanvas宽度
   canvasWidth
-  // 图表高度
-  chartHeight
-  // 图表宽度
+  // 总图表宽度
   chartWidth
+  // 总图表高度
+  chartHeight
+  // k线图表高度
+  klineChartHeight
+  // 交易量图表高度
+  volumeChartHeight = 300
   // x轴显示的单位数 默认120分钟的数据
   xAxisUnitsVisiable = 1000 * 60 * 120
   // y轴显示的单位数 默认8个
-  yAxisUnitsVisiable = 8
+  chartYAxisUnitsVisiable = 8
+  // y轴显示的单位数 默认4个
+  volumeYAxisUnitsVisiable = 4
   // 坐标轴轴标签字体大小
   axisLabelSize = 10
   // xy轴刻度线长度
@@ -39,7 +45,7 @@ export default class View {
     this.chart = chart
   }
 
-  // 创建并添加canvas
+  // 创建元素
   createElements () {
     const { chart } = this
 
@@ -53,6 +59,7 @@ export default class View {
       height,
       width
     })
+    this.ctx = this.canvas.getContext('2d')
     chart.domUtils.appendElms(this.canvas)
 
     // candle info
@@ -120,20 +127,25 @@ export default class View {
     })
     amplitudeValue.innerHTML = 'N/A'
 
-    chart.domUtils.appendElms(timeSpan, candleInfo)
-    chart.domUtils.appendElms(openSpan, candleInfo)
-    chart.domUtils.appendElms(openValue, candleInfo)
-    chart.domUtils.appendElms(highSpan, candleInfo)
-    chart.domUtils.appendElms(highValue, candleInfo)
-    chart.domUtils.appendElms(lowSpan, candleInfo)
-    chart.domUtils.appendElms(lowValue, candleInfo)
-    chart.domUtils.appendElms(lowValue, candleInfo)
-    chart.domUtils.appendElms(closeSpan, candleInfo)
-    chart.domUtils.appendElms(closeValue, candleInfo)
-    chart.domUtils.appendElms(changeSpan, candleInfo)
-    chart.domUtils.appendElms(changeValue, candleInfo)
-    chart.domUtils.appendElms(amplitudeSpan, candleInfo)
-    chart.domUtils.appendElms(amplitudeValue, candleInfo)
+    chart.domUtils.appendElms(
+      [
+        timeSpan,
+        openSpan,
+        openValue,
+        highSpan,
+        highValue,
+        lowSpan,
+        lowValue,
+        closeSpan,
+        closeValue,
+        changeSpan,
+        changeValue,
+        amplitudeSpan,
+        amplitudeValue
+      ],
+      candleInfo
+    )
+
     // MA info
     const MAInfo = chart.domUtils.createElm('div', {
       id: Constant.MA_INFO_CONTAINER_ID
@@ -153,6 +165,20 @@ export default class View {
       chart.domUtils.appendElms(value, MAInfo)
     })
     chart.domUtils.appendElms(MAInfo, chart.container)
+
+    // vol
+    const VolInfo = chart.domUtils.createElm('div', {
+      id: Constant.VOL_INFO_CONTAINER_ID
+    })
+    chart.domUtils.appendElms(VolInfo, chart.container)
+    const volSpan = chart.domUtils.createElm('span', {
+      id: Constant.VOL_SPAN_ID
+    })
+    volSpan.innerHTML = `Vol(${chart.options.volumeSymbol}):`
+    const volValue = chart.domUtils.createElm('span', {
+      id: Constant.VOL_VALUE_ID
+    })
+    chart.domUtils.appendElms([volSpan, volValue], VolInfo)
   }
 
   // 高清化
@@ -166,6 +192,11 @@ export default class View {
     this.canvasHeight = this.canvas.height
     this.canvas.style.height = this.canvas.height / this.dpr + 'px'
     this.canvas.style.width = this.canvas.width / this.dpr + 'px'
+
+    const volInfo = this.chart.domUtils.getDOMElm(
+      '#' + Constant.VOL_INFO_CONTAINER_ID
+    )
+    volInfo.style = `top:${this.canvasHeight - this.volumeChartHeight}px`
   }
 
   // 清空画布
@@ -206,8 +237,9 @@ export default class View {
     this.drawAxis()
     this.drawMAs()
     this.drawCandles()
+    this.drawVolumes()
     this.drawKlineInfo()
-    this.drawLastCandlePriceLine()
+    this.drawLastCandlePrice()
     this.drawCursorCross(
       controller.nowMousePosition.x,
       controller.nowMousePosition.y
@@ -281,8 +313,7 @@ export default class View {
     const service = this.service
     const chart = this.chart
 
-    const yAxisPosition = service.calcYAxisCoordinate()
-
+    // 绘制轴线
     chart.canvasUtils.drawLine(
       { x: this.padding.left + this.chartWidth, y: this.padding.top },
       {
@@ -291,7 +322,30 @@ export default class View {
       },
       '#34383F'
     )
-    yAxisPosition.forEach((data) => {
+
+    const klineYAxisPosition = service.calcYAxisCoordinate('kline')
+    const volumeYAxisPosition = service.calcYAxisCoordinate('volume')
+
+    volumeYAxisPosition.forEach((data) => {
+      // 绘制刻度线
+      chart.canvasUtils.drawLine(
+        { x: this.padding.left + this.chartWidth, y: data.y },
+        {
+          x: this.chartWidth + this.padding.top + this.scaleHeight,
+          y: data.y
+        },
+        'rgb(132, 142, 156)'
+      )
+      // 绘制网格
+      chart.canvasUtils.drawLine(
+        { x: this.padding.left, y: data.y },
+        { x: this.chartWidth + this.padding.left, y: data.y },
+        '#24272C'
+      )
+      this.drawLabels({ x: undefined, y: data.y }, data.value)
+    })
+
+    klineYAxisPosition.forEach((data) => {
       // 绘制刻度线
       chart.canvasUtils.drawLine(
         { x: this.padding.left + this.chartWidth, y: data.y },
@@ -321,7 +375,7 @@ export default class View {
       _value = dateFormat('HH:MM', new Date(value))
     } else {
       // y轴处理
-      _value = fixNumber(_value, chart.digitNumber)
+      _value = fixNumber(_value, chart.priceDigitNumber)
     }
 
     chart.canvasUtils.drawText(
@@ -337,13 +391,13 @@ export default class View {
 
   // 绘制蜡烛图
   drawCandles () {
-    this.service.dataZoom.data.forEach((candleData, index) => {
+    this.service.dataZoom.realData.forEach((candleData, index) => {
       this.drawCandle(candleData, index)
     })
   }
 
   // 绘制单根蜡烛
-  drawCandle (candleData, index) {
+  drawCandle (candleData) {
     const service = this.service
     const chart = this.chart
 
@@ -407,6 +461,52 @@ export default class View {
     chart.canvasUtils.drawRect(x, y, width, height, Color[status])
   }
 
+  // 绘制交易量
+  drawVolumes () {
+    const { service } = this
+    service.dataZoom.realData.forEach((kline) => this.drawVolume(kline))
+  }
+
+  // 绘制单根交易量
+  drawVolume (kline) {
+    const { service, chart } = this
+
+    const { x, y } = service.mapDataToCoordinate(
+      kline.time,
+      kline.volume,
+      'volume'
+    )
+
+    let volumeWidth = this.candleWidth
+    const volumeHeight = this.canvasHeight - this.padding.bottom - y
+
+    let rectX = x - volumeWidth / 2
+
+    // 超出右边界的蜡烛的width处理
+    if (rectX + volumeWidth >= this.padding.left + this.chartWidth) {
+      volumeWidth =
+        volumeWidth -
+        (rectX + volumeWidth - this.padding.left - this.chartWidth) -
+        2 * this.dpr /** 为了显示效果更加美观,2px 空余空间 */
+      if (volumeWidth < 0) {
+        volumeWidth = 0
+      }
+    } else if (rectX < this.padding.left) {
+      // 超出左边界的蜡烛的width处理
+      if (rectX + volumeWidth < this.padding.left) return
+      volumeWidth = volumeWidth - (this.padding.left - rectX)
+      rectX = this.padding.left
+    }
+
+    chart.canvasUtils.drawRect(
+      rectX,
+      y,
+      volumeWidth,
+      volumeHeight,
+      Color[kline.status + 'Lowlight']
+    )
+  }
+
   // 绘制MA线
   drawMAs () {
     const service = this.service
@@ -434,8 +534,8 @@ export default class View {
         }
         // 纵向边界处理
         if (
-          point.y > this.padding.top + this.chartHeight ||
-          nextPoint.y > this.padding.top + this.chartHeight
+          point.y > this.padding.top + this.klineChartHeight ||
+          nextPoint.y > this.padding.top + this.klineChartHeight
         ) {
           continue
         }
@@ -465,6 +565,7 @@ export default class View {
     }
 
     this.drawMAInfo(MAInfo)
+    this.drawVolumeInfo(currKline)
   }
 
   // 绘制蜡烛信息
@@ -477,15 +578,15 @@ export default class View {
     timeSpan.innerHTML = dateFormat('YYYY/mm/dd HH:MM', new Date(info.time))
     // open
     const openValue = chart.domUtils.getDOMElm('#' + Constant.OPEN_VALUE_ID)
-    openValue.innerHTML = fixNumber(info.open, chart.digitNumber)
+    openValue.innerHTML = fixNumber(info.open, chart.priceDigitNumber)
     domUtils.setStyle(openValue, { color: Color[info.status] })
     // low
     const lowValue = chart.domUtils.getDOMElm('#' + Constant.LOW_VALUE_ID)
-    lowValue.innerHTML = fixNumber(info.low, chart.digitNumber)
+    lowValue.innerHTML = fixNumber(info.low, chart.priceDigitNumber)
     domUtils.setStyle(lowValue, { color: Color[info.status] })
     // close
     const closeValue = chart.domUtils.getDOMElm('#' + Constant.CLOSE_VALUE_ID)
-    closeValue.innerHTML = fixNumber(info.close, chart.digitNumber)
+    closeValue.innerHTML = fixNumber(info.close, chart.priceDigitNumber)
     domUtils.setStyle(closeValue, { color: Color[info.status] })
     // change
     const changeValue = chart.domUtils.getDOMElm('#' + Constant.CHANGE_VALUE_ID)
@@ -507,9 +608,19 @@ export default class View {
     for (const key in info) {
       const data = info[key]
       const valueSpan = chart.domUtils.getDOMElm(`#__ma-${key}__`)
-      valueSpan.innerHTML = fixNumber(data.value, chart.digitNumber)
+      valueSpan.innerHTML = fixNumber(data.value, chart.priceDigitNumber)
       domUtils.setStyle(valueSpan, { color: data.color })
     }
+  }
+
+  // 绘制交易量信息
+  drawVolumeInfo (info) {
+    const { chart } = this
+    const { domUtils } = chart
+
+    const valueSpan = chart.domUtils.getDOMElm(`#${Constant.VOL_VALUE_ID}`)
+    valueSpan.innerHTML = fixNumber(info.volume, chart.volumeDigitNumer)
+    domUtils.setStyle(valueSpan, { color: Color[info.status] })
   }
 
   // 绘制鼠标十字线
@@ -523,7 +634,7 @@ export default class View {
     // 边界情况
     if (
       x >= this.padding.left + this.chartWidth ||
-      y >= this.padding.top + this.chartHeight
+      y > this.padding.top + this.chartHeight
     ) {
       this.canvas.style.cursor = 'default'
       return
@@ -556,10 +667,11 @@ export default class View {
     const service = this.service
 
     // 鼠标所指的坐标映射
-    const { time: cursorTime, value } = service.mapCoordinateToData(
-      x - this.padding.left,
-      y - this.padding.top
-    )
+    const {
+      time: cursorTime,
+      value,
+      type
+    } = service.mapCoordinateToData(x - this.padding.left, y - this.padding.top)
 
     // 寻找鼠标所指的k线
     const [candle] = service.dataZoom.data.filter((data) => {
@@ -606,13 +718,13 @@ export default class View {
     )
 
     // 绘制y轴多边形及文字
-    this.drawYAxisLabelPolygon(y, '#2B2F36', '#3D434C', value)
+    this.drawYAxisLabelPolygon(y, '#2B2F36', '#3D434C', value, type)
 
     return res.x
   }
 
   // 绘制y轴多边形及文字
-  drawYAxisLabelPolygon (y, fillStyle, strokeStyle, text) {
+  drawYAxisLabelPolygon (y, fillStyle, strokeStyle, text, type) {
     const chart = this.chart
 
     const yReactHeight = 20 * this.dpr
@@ -645,7 +757,7 @@ export default class View {
     chart.canvasUtils.drawText(
       this.padding.left + this.chartWidth + this.scaleHeight,
       y,
-      fixNumber(text, chart.digitNumber),
+      type === 'price' ? fixNumber(text, chart.priceDigitNumber) : text,
       12 * this.dpr + 'px ',
       'middle',
       '#fff',
@@ -653,8 +765,8 @@ export default class View {
     )
   }
 
-  // 绘制屏幕中最后一根k线的水平线
-  drawLastCandlePriceLine () {
+  // 在y轴高亮屏幕中最后一根k线的实时价
+  drawLastCandlePrice () {
     const service = this.service
     const lastCandle = service.dataZoom.data[service.dataZoom.data.length - 1]
     const { y } = service.mapDataToCoordinate(lastCandle.time, lastCandle.close)
@@ -662,7 +774,8 @@ export default class View {
       y,
       Color[lastCandle.status],
       lastCandle.status === 'up' ? Color.upHighlight : Color.downHighlight,
-      lastCandle.close
+      lastCandle.close,
+      'price'
     )
   }
 }
