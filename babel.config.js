@@ -5,7 +5,7 @@ module.exports = {
       {
         modules: false,
         useBuiltIns: "usage",
-        corejs: "2.6.10",
+        corejs: "3",
         targets: {
           ie: 10,
         },
@@ -17,4 +17,4 @@ module.exports = {
     ["@babel/plugin-transform-runtime"],
   ],
   ignore: ["node_modules/**"],
-};
+}
