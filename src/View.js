@@ -200,10 +200,10 @@ export default class View {
     const { chart, controller } = this
     // logo
     const logoSrc = chart.options.logo
-    if (!logoSrc) return
-
-    this.logo = new Image()
-    this.logo.src = logoSrc
+    if (logoSrc) {
+      this.logo = new Image()
+      this.logo.src = logoSrc
+    }
 
     // 高清化
     this.highDefinition()
