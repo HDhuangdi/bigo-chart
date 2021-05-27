@@ -1,11 +1,11 @@
 import babel from "rollup-plugin-babel"
-
 import { nodeResolve } from "@rollup/plugin-node-resolve"
 import commonjs from "@rollup/plugin-commonjs"
 import img from "@rollup/plugin-image"
 import { terser } from "rollup-plugin-terser"
 import { eslint } from "rollup-plugin-eslint"
 import postcss from "rollup-plugin-postcss"
+const path = require("path")
 
 export default {
   input: "src/Chart.js",
@@ -17,7 +17,10 @@ export default {
     { file: "dist/index.cjs.js", format: "cjs" },
   ],
   plugins: [
-    postcss(),
+    postcss({
+      extensions: [".css"],
+      extract: path.resolve("dist/chart.css"),
+    }),
     img(),
     eslint(),
     nodeResolve(),

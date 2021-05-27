@@ -256,7 +256,7 @@ export default class Service {
 
   // 分页逻辑
   async loadMoreData () {
-    const { chart, view } = this
+    const { chart } = this
 
     if (this.loadMorePending || !this.hasMoreData) return
 
@@ -281,7 +281,6 @@ export default class Service {
       }
 
       chart.bars = newbars.concat(chart.bars)
-      view.draw()
     }
   }
 

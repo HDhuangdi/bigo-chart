@@ -8,12 +8,12 @@ export function canvasUtils (ctx) {
   ) {
     if (close) {
       ctx.beginPath()
+      ctx.setLineDash(dash)
     }
-    ctx.setLineDash(dash)
     ctx.moveTo(startPosition.x, startPosition.y)
     ctx.lineTo(endPosition.x, endPosition.y)
-    ctx.strokeStyle = color
     if (close) {
+      ctx.strokeStyle = color
       ctx.stroke()
     }
   }

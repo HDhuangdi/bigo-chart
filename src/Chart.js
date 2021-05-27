@@ -124,6 +124,10 @@ export default class BigoChart {
       candleToUpdate.volume += volume
       this.bars[this.bars.length - 1] = candleToUpdate
     }
-    this.view.draw()
+    // 最后一根k线如果在屏幕内才需要绘制
+    const { x } = this.service.mapDataToCoordinate(candleToUpdate.time)
+    if (x <= this.view.chartWidth) {
+      this.view.draw()
+    }
   }
 }

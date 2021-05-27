@@ -262,6 +262,7 @@ export default class View {
       this.resize()
       // 如果为用户控制dataZoom,就只需updte,否则就自动算dataZoom
       service.calcDataZoom(service.dataZoom.user ? 'update' : 'init')
+      this.drawTickerInfo()
     }
     window.requestAnimationFrame(() => {
       this.clearCanvas()
@@ -269,7 +270,6 @@ export default class View {
       this.drawAxis()
       this.drawMAs()
       this.drawTicker()
-      this.drawTickerInfo()
       this.drawLastTickerPrice()
     })
   }
@@ -281,6 +281,7 @@ export default class View {
       this.resize()
       // 如果为用户控制dataZoom,就只需updte,否则就自动算dataZoom
       service.calcDataZoom(service.dataZoom.user ? 'update' : 'init')
+      this.drawTickerInfo()
     }
     window.requestAnimationFrame(() => {
       this.clearCursorCanvas()
@@ -310,6 +311,7 @@ export default class View {
     this.resize()
     // 如果为用户控制dataZoom,就只需updte,否则就自动算dataZoom
     service.calcDataZoom(service.dataZoom.user ? 'update' : 'init')
+    this.drawTickerInfo()
     this.drawCursorCanvas(true)
     this.drawMainCanvas(true)
   }
@@ -590,6 +592,7 @@ export default class View {
       )
 
       this.ctx.beginPath()
+      this.ctx.strokeStyle = option.color
       for (let index = 0; index < MAPointsPositions.length; index++) {
         const point = MAPointsPositions[index]
         const nextPoint = MAPointsPositions[index + 1]
@@ -613,7 +616,7 @@ export default class View {
         chart.canvasUtils.drawLine(
           { x: point.x, y: point.y },
           { x: nextPoint.x, y: nextPoint.y },
-          option.color,
+          undefined,
           false
         )
       }
