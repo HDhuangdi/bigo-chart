@@ -257,21 +257,24 @@ export default class View {
 
   // 绘制
   draw () {
-    const { service, controller } = this
-    this.resize()
-    // 如果为用户控制dataZoom,就只需updte,否则就自动算dataZoom
-    service.calcDataZoom(service.dataZoom.user ? 'update' : 'init')
-    this.clearCanvas()
-    this.drawBg()
-    this.drawAxis()
-    this.drawMAs()
-    this.drawTicker()
-    this.drawTickerInfo()
-    this.drawLastTickerPrice()
-    this.drawCursorCross(
-      controller.nowMousePosition.x,
-      controller.nowMousePosition.y
-    )
+    console.log('draw')
+    window.requestAnimationFrame(() => {
+      const { service, controller } = this
+      this.resize()
+      // 如果为用户控制dataZoom,就只需updte,否则就自动算dataZoom
+      service.calcDataZoom(service.dataZoom.user ? 'update' : 'init')
+      this.clearCanvas()
+      this.drawBg()
+      this.drawAxis()
+      this.drawMAs()
+      this.drawTicker()
+      this.drawTickerInfo()
+      this.drawLastTickerPrice()
+      this.drawCursorCross(
+        controller.nowMousePosition.x,
+        controller.nowMousePosition.y
+      )
+    })
   }
 
   // 绘制背景
