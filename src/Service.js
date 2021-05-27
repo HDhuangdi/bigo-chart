@@ -129,7 +129,7 @@ export default class Service {
     view.padding.bottom = 20 * view.dpr
     view.padding.left = 15 * view.dpr
 
-    view.padding.right = textWidth
+    view.padding.right = Math.round(textWidth)
   }
 
   // 手动更新缩放对象
@@ -294,25 +294,21 @@ export default class Service {
       y: 0
     }
 
-    position.x =
+    position.x = Math.round(
       view.padding.left +
-      ((time - this.dataZoom.xAxisStartValue) / this.unitToXAxisPx).toFixed(1) *
-        1
+        (time - this.dataZoom.xAxisStartValue) / this.unitToXAxisPx
+    )
 
     if (type === 'candle') {
       const height =
-        (
-          (value - this.dataZoom.klineYAxisStartValue) /
-          this.candleUnitToYAxisPx
-        ).toFixed(1) * 1
-      position.y = view.padding.top + view.klineChartHeight - height
+        (value - this.dataZoom.klineYAxisStartValue) / this.candleUnitToYAxisPx
+
+      position.y = Math.round(view.padding.top + view.klineChartHeight - height)
     } else {
       const height =
-        (
-          (value - this.dataZoom.volumeYAxisStartValue) /
-          this.volumeUnitToYAxisPx
-        ).toFixed(1) * 1
-      position.y = view.padding.top + view.chartHeight - height
+        (value - this.dataZoom.volumeYAxisStartValue) / this.volumeUnitToYAxisPx
+
+      position.y = Math.round(view.padding.top + view.chartHeight - height)
     }
 
     return position

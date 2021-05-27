@@ -20,3 +20,8 @@
 #__MA-info__ {
   top: 20px;
 }
+#__cursor__ {
+  position: absolute;
+  top: 0;
+  left: 0;
+}

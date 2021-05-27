@@ -14,6 +14,7 @@ export default class BigoChart {
   container
 
   canvasUtils
+  cursorCanvasUtils
   domUtils
   // 行情单位,一根k线为多少时间
   tickerUnit
@@ -27,15 +28,15 @@ export default class BigoChart {
   MAOptions = [
     {
       color: '#FF00FF',
-      interval: 7
+      interval: 5
     },
     {
       color: '#CF3049',
-      interval: 25
+      interval: 10
     },
     {
       color: '#00CCCC',
-      interval: 99
+      interval: 30
     }
   ]
 
@@ -60,6 +61,7 @@ export default class BigoChart {
     this.domUtils = domUtils(this.container)
     this.view.createElements()
     this.canvasUtils = canvasUtils(this.view.ctx)
+    this.cursorCanvasUtils = canvasUtils(this.view.cursorCtx)
 
     if (options.MA) {
       this.MAOptions = options.MA

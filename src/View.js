@@ -8,6 +8,8 @@ export default class View {
   chart
   canvas
   ctx
+  cursorCanvas
+  cursorCtx
   dpr
   logo
   // canvas内边距
@@ -59,8 +61,14 @@ export default class View {
       height,
       width
     })
+    this.cursorCanvas = chart.domUtils.createElm('canvas', {
+      id: Constant.CURSOR_CANVAS_ID,
+      height,
+      width
+    })
+    this.cursorCtx = this.cursorCanvas.getContext('2d')
     this.ctx = this.canvas.getContext('2d')
-    chart.domUtils.appendElms(this.canvas)
+    chart.domUtils.appendElms([this.canvas, this.cursorCanvas])
 
     // candle info
     const candleInfo = chart.domUtils.createElm('div', {
@@ -183,16 +191,16 @@ export default class View {
   }
 
   // 高清化
-  highDefinition () {
+  highDefinition (canvas) {
     this.dpr = window.devicePixelRatio || 1
-    const rect = this.canvas.getBoundingClientRect()
+    const rect = canvas.getBoundingClientRect()
 
-    this.canvas.width = rect.width * this.dpr
-    this.canvas.height = rect.height * this.dpr
-    this.canvasWidth = this.canvas.width
-    this.canvasHeight = this.canvas.height
-    this.canvas.style.height = this.canvas.height / this.dpr + 'px'
-    this.canvas.style.width = this.canvas.width / this.dpr + 'px'
+    canvas.width = rect.width * this.dpr
+    canvas.height = rect.height * this.dpr
+    this.canvasWidth = canvas.width
+    this.canvasHeight = canvas.height
+    canvas.style.height = canvas.height / this.dpr + 'px'
+    canvas.style.width = canvas.width / this.dpr + 'px'
   }
 
   // 初始化图表
@@ -206,7 +214,8 @@ export default class View {
     }
 
     // 高清化
-    this.highDefinition()
+    this.highDefinition(this.canvas)
+    this.highDefinition(this.cursorCanvas)
     // 事件注册
     controller.registerMouseEvents()
 
@@ -238,8 +247,48 @@ export default class View {
 
   // 清空画布
   clearCanvas () {
-    this.canvas.width = this.canvasWidth
-    this.canvas.height = this.canvasHeight
+    this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight)
+  }
+
+  // 清空指针画布
+  clearCursorCanvas () {
+    this.cursorCtx.clearRect(0, 0, this.canvasWidth, this.canvasHeight)
+  }
+
+  // 绘制主画布
+  drawMainCanvas (drawAll) {
+    const { service } = this
+    if (!drawAll) {
+      this.resize()
+      // 如果为用户控制dataZoom,就只需updte,否则就自动算dataZoom
+      service.calcDataZoom(service.dataZoom.user ? 'update' : 'init')
+    }
+    window.requestAnimationFrame(() => {
+      this.clearCanvas()
+      this.drawBg()
+      this.drawAxis()
+      this.drawMAs()
+      this.drawTicker()
+      this.drawTickerInfo()
+      this.drawLastTickerPrice()
+    })
+  }
+
+  // 绘制指针画布
+  drawCursorCanvas (drawAll) {
+    const { service, controller } = this
+    if (!drawAll) {
+      this.resize()
+      // 如果为用户控制dataZoom,就只需updte,否则就自动算dataZoom
+      service.calcDataZoom(service.dataZoom.user ? 'update' : 'init')
+    }
+    window.requestAnimationFrame(() => {
+      this.clearCursorCanvas()
+      this.drawCursorCross(
+        controller.nowMousePosition.x,
+        controller.nowMousePosition.y
+      )
+    })
   }
 
   // 绘制logo
@@ -255,26 +304,14 @@ export default class View {
     )
   }
 
-  // 绘制
+  // 绘制全部画布
   draw () {
-    console.log('draw')
-    window.requestAnimationFrame(() => {
-      const { service, controller } = this
-      this.resize()
-      // 如果为用户控制dataZoom,就只需updte,否则就自动算dataZoom
-      service.calcDataZoom(service.dataZoom.user ? 'update' : 'init')
-      this.clearCanvas()
-      this.drawBg()
-      this.drawAxis()
-      this.drawMAs()
-      this.drawTicker()
-      this.drawTickerInfo()
-      this.drawLastTickerPrice()
-      this.drawCursorCross(
-        controller.nowMousePosition.x,
-        controller.nowMousePosition.y
-      )
-    })
+    const { service } = this
+    this.resize()
+    // 如果为用户控制dataZoom,就只需updte,否则就自动算dataZoom
+    service.calcDataZoom(service.dataZoom.user ? 'update' : 'init')
+    this.drawCursorCanvas(true)
+    this.drawMainCanvas(true)
   }
 
   // 绘制背景
@@ -420,11 +457,11 @@ export default class View {
     } else {
       // y轴处理
       _value = fixNumber(_value, chart.priceDigitNumber)
-      textPos.x =
+      textPos.x = Math.round(
         this.padding.left + this.chartWidth + this.scaleHeight + 2 * this.dpr
+      )
       textPos.y = potision.y
     }
-
     chart.canvasUtils.drawText(
       textPos.x,
       textPos.y,
@@ -463,13 +500,15 @@ export default class View {
     const highPosition = service.mapDataToCoordinate(ticker.time, ticker.high)
     const lowPosition = service.mapDataToCoordinate(ticker.time, ticker.low)
     this.candleMargin = chart.tickerUnit / 20 / service.unitToXAxisPx // 蜡烛间距为 1/20 k线单位所对应的宽度
-    this.candleWidth =
+    this.candleWidth = Math.round(
       chart.tickerUnit / service.unitToXAxisPx - 2 * this.candleMargin
-
+    )
     let x =
       status === 'up'
         ? closePosition.x - this.candleWidth / 2
         : openPosition.x - this.candleWidth / 2
+    // 使用整数可以提高性能
+    x = Math.round(x)
     const y = status === 'up' ? closePosition.y : openPosition.y
     const height = Math.abs(closePosition.y - openPosition.y)
     let width = this.candleWidth
@@ -496,15 +535,8 @@ export default class View {
         Color[status]
       )
     }
-
     // 绘制蜡烛矩形部分
     chart.canvasUtils.drawRect(x, y, width, height, Color[status])
-  }
-
-  // 绘制交易量
-  drawVolumes () {
-    const { service } = this
-    service.dataZoom.realData.forEach((ticker) => this.drawVolume(ticker))
   }
 
   // 绘制某个行情的交易量
@@ -520,7 +552,7 @@ export default class View {
     let volumeWidth = this.candleWidth
     const volumeHeight = this.canvasHeight - this.padding.bottom - y
 
-    let rectX = x - volumeWidth / 2
+    let rectX = Math.round(x - volumeWidth / 2)
 
     // 超出右边界的蜡烛的width处理
     if (rectX + volumeWidth >= this.padding.left + this.chartWidth) {
@@ -537,7 +569,6 @@ export default class View {
       volumeWidth = volumeWidth - (this.padding.left - rectX)
       rectX = this.padding.left
     }
-
     chart.canvasUtils.drawRect(
       rectX,
       y,
@@ -596,7 +627,9 @@ export default class View {
     const currKline = chart.cursorTicker || chart.bars[chart.bars.length - 1]
     this.drawCandleInfo(currKline)
     const MAInfo = {}
+
     for (const option of chart.MAOptions) {
+      if (!option.points || !option.points.length) return
       MAInfo[option.interval] = option.points.find(
         (point) => point.time === currKline.time
       )
@@ -679,15 +712,15 @@ export default class View {
       x >= this.padding.left + this.chartWidth ||
       y > this.padding.top + this.chartHeight
     ) {
-      this.canvas.style.cursor = 'default'
+      this.cursorCanvas.style.cursor = 'default'
       return
     }
-    this.canvas.style.cursor = 'crosshair'
+    this.cursorCanvas.style.cursor = 'crosshair'
 
     x = this.drawCursorLabel(x, y)
 
     // 横向
-    chart.canvasUtils.drawLine(
+    chart.cursorCanvasUtils.drawLine(
       { x: this.padding.left, y },
       { x: this.padding.left + this.chartWidth, y },
       '#AEB4BC',
@@ -695,7 +728,7 @@ export default class View {
       [5 * this.dpr, 5 * this.dpr]
     )
     // 纵向
-    chart.canvasUtils.drawLine(
+    chart.cursorCanvasUtils.drawLine(
       { x, y: this.padding.top },
       { x, y: this.padding.top + this.chartHeight },
       '#AEB4BC',
@@ -722,14 +755,14 @@ export default class View {
     const formatedTime = dateFormat('YYYY/mm/dd HH:MM', new Date(ticker.time))
     // 绘制x轴矩形
     const { width: textWidth, height: textHeight } =
-      chart.canvasUtils.getTextWidthAndHeight(
+      chart.cursorCanvasUtils.getTextWidthAndHeight(
         this.axisLabelSize * this.dpr,
         'sans-serif',
         formatedTime
       )
     const reactWidth = textWidth + 15 * this.dpr
     const xReactHeight = this.padding.bottom
-    chart.canvasUtils.drawRect(
+    chart.cursorCanvasUtils.drawRect(
       res.x - reactWidth / 2,
       this.chartHeight + this.padding.top,
       reactWidth,
@@ -737,7 +770,7 @@ export default class View {
       '#2B2F36'
     )
 
-    chart.canvasUtils.drawText(
+    chart.cursorCanvasUtils.drawText(
       res.x,
       this.chartHeight + this.padding.top + xReactHeight / 2 - textHeight / 2,
       formatedTime,
@@ -748,13 +781,20 @@ export default class View {
     )
 
     // 绘制y轴多边形及文字
-    this.drawYAxisLabelPolygon(y, '#2B2F36', '#3D434C', value, type)
+    this.drawYAxisLabelPolygon(
+      chart.cursorCanvasUtils,
+      y,
+      '#2B2F36',
+      '#3D434C',
+      value,
+      type
+    )
 
     return res.x
   }
 
   // 绘制y轴多边形及文字
-  drawYAxisLabelPolygon (y, fillStyle, strokeStyle, text, type) {
+  drawYAxisLabelPolygon (utils, y, fillStyle, strokeStyle, text, type) {
     const chart = this.chart
 
     const yReactHeight = 20 * this.dpr
@@ -784,16 +824,16 @@ export default class View {
     ]
     const _text =
       type === 'price' ? fixNumber(text, chart.priceDigitNumber) : text
-    const { width: textWidth } = chart.canvasUtils.getTextWidthAndHeight(
+    const { width: textWidth } = utils.getTextWidthAndHeight(
       this.axisLabelSize * this.dpr,
       'sans-serif',
       _text
     )
 
-    chart.canvasUtils.drawPolygon(points, 'fill', fillStyle, 1 * this.dpr)
-    chart.canvasUtils.drawPolygon(points, 'stroke', strokeStyle, 1 * this.dpr)
+    utils.drawPolygon(points, 'fill', fillStyle, 1 * this.dpr)
+    utils.drawPolygon(points, 'stroke', strokeStyle, 1 * this.dpr)
 
-    chart.canvasUtils.drawText(
+    utils.drawText(
       this.padding.left +
         this.chartWidth +
         this.scaleHeight +
@@ -810,10 +850,11 @@ export default class View {
 
   // 在y轴高亮屏幕中最后一根行情的实时价
   drawLastTickerPrice () {
-    const service = this.service
+    const { service, chart } = this
     const lastCandle = service.dataZoom.data[service.dataZoom.data.length - 1]
     const { y } = service.mapDataToCoordinate(lastCandle.time, lastCandle.close)
     this.drawYAxisLabelPolygon(
+      chart.canvasUtils,
       y,
       Color[lastCandle.status],
       lastCandle.status === 'up' ? Color.upHighlight : Color.downHighlight,

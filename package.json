@@ -4,7 +4,7 @@
   "description": "可用于股票,基金,加密货币的图表库,支持分时图,蜡烛图",
   "main": "dist/index.esm.js",
   "scripts": {
-    "dev": "rollup -c -w",
+    "dev": "rollup -c -w --sourcemap",
     "build": "rollup -c",
     "fix": "eslint --fix src",
     "pre-commit": "lint-staged"

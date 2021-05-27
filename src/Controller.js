@@ -20,12 +20,12 @@ export default class Controller {
 
   // 注册事件
   registerMouseEvents () {
-    const { view } = this
+    const { chart } = this
 
-    view.canvas.addEventListener('mousedown', this.onMouseDown.bind(this))
-    view.canvas.addEventListener('mousemove', this.onMouseMove.bind(this))
-    view.canvas.addEventListener('mouseup', this.onMouseUp.bind(this))
-    view.canvas.addEventListener('mousewheel', this.onMouseWeel.bind(this))
+    chart.container.addEventListener('mousedown', this.onMouseDown.bind(this))
+    chart.container.addEventListener('mousemove', this.onMouseMove.bind(this))
+    chart.container.addEventListener('mouseup', this.onMouseUp.bind(this))
+    chart.container.addEventListener('mousewheel', this.onMouseWeel.bind(this))
   }
 
   // 鼠标点击事件
@@ -43,7 +43,7 @@ export default class Controller {
 
     this.nowMousePosition = { x, y }
     // 绘制
-    if (!this.isMouseDown) return view.draw()
+    if (!this.isMouseDown) return view.drawCursorCanvas()
     service.dataZoom.user = true
     const diffX = this.prevMousePosition.x - this.nowMousePosition.x
 

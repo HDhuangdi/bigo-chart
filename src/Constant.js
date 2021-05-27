@@ -1,5 +1,6 @@
 export default class Constant {
   static CANVAS_ID = '__bigo-chart__'
+  static CURSOR_CANVAS_ID = '__cursor__'
   static CANDLE_INFO_CONTAINER_ID = '__candle-info__'
   static MA_INFO_CONTAINER_ID = '__MA-info__'
   static VOL_INFO_CONTAINER_ID = '__vol-info__'
