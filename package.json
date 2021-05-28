@@ -1,6 +1,6 @@
 {
   "name": "bigo-chart",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "可用于股票,基金,加密货币的图表库,支持分时图,蜡烛图",
   "main": "dist/index.esm.js",
   "scripts": {
