@@ -25,7 +25,7 @@ export default class BigoChart {
   // 价格数据精度
   priceDigitNumber = 2
   // 交易量数据精度
-  volumeDigitNumer = 3
+  volumeDigitNumber = 2
   // MA list
   MAOptions = [
     {
@@ -87,17 +87,41 @@ export default class BigoChart {
     mergeObject(this.options, options)
 
     if (options.MA) {
-      this.MAOptions = options.MA
+      this.MAOptions = this.options.MA
     }
     this.maxMAInterval = Math.max(
       ...this.MAOptions.map((item) => item.interval)
     )
-    this.bars = options.bars.sort((a, b) => a.time - b.time)
+    this.bars = this.initBars(this.options.bars)
     // 检查是否有交易量
     if (this.options.hasVolume) {
       this.options.hasVolume = this.bars.every((bar) => !!bar.volume)
     }
     this.tickerUnit = this.bars[1].time - this.bars[0].time
+
+    this.setChartType(this.options.chartType)
+  }
+
+  initBars (bars) {
+    bars.forEach((bar) => {
+      this.service.formatTickerData(bar)
+    })
+    bars.sort((a, b) => a.time - b.time)
+    return bars
+  }
+
+  // 更换图表类型
+  setChartType (chartType) {
+    switch (Number(chartType)) {
+      case Constant.CHART_TYPE_LINE:
+        this.chartType = Constant.CHART_TYPE_LINE
+        break
+      case Constant.CHART_TYPE_CANDLE:
+        this.chartType = Constant.CHART_TYPE_CANDLE
+        break
+      default:
+        this.chartType = Constant.CHART_TYPE_CANDLE
+    }
   }
 
   // 订阅数据
@@ -118,6 +142,7 @@ export default class BigoChart {
       candleToUpdate.low = value
       candleToUpdate.time = time
       candleToUpdate.volume = volume
+      this.service.formatTickerData(candleToUpdate)
       this.bars.push(candleToUpdate)
     } else {
       // update last candle
@@ -128,6 +153,7 @@ export default class BigoChart {
         candleToUpdate.low = value
       }
       candleToUpdate.volume += volume
+      this.service.formatTickerData(candleToUpdate)
       this.bars[this.bars.length - 1] = candleToUpdate
     }
     // 最后一根k线如果在屏幕内才需要绘制
@@ -137,26 +163,9 @@ export default class BigoChart {
     }
   }
 
-  // 更换图表类型
-  setChartType (chartType) {
-    switch (Number(chartType)) {
-      case Constant.CHART_TYPE_LINE:
-        this.chartType = Constant.CHART_TYPE_LINE
-        this.view.draw()
-        break
-      case Constant.CHART_TYPE_CANDLE:
-        this.chartType = Constant.CHART_TYPE_CANDLE
-        this.view.draw()
-        break
-      default:
-        this.chartType = Constant.CHART_TYPE_CANDLE
-    }
-  }
-
   // 更换图表数据源
   setOptions (newOptions) {
     this.switchPending = true
-
     this.updateOptions(newOptions)
     this.service.dataZoom.user = false
     this.switchPending = false

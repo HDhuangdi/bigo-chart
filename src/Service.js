@@ -1,4 +1,4 @@
-import { getAVG, fixNumber } from './utils'
+import { getAVG, simplifyNumber } from './utils'
 
 export default class Service {
   view
@@ -120,20 +120,20 @@ export default class Service {
   // 计算chart padding
   calcPadding (data) {
     const { chart, view } = this
-
     const { width: textWidth } = chart.canvasUtils.getTextWidthAndHeight(
       view.axisLabelSize * view.dpr,
       'sans-serif',
-      fixNumber(
+      simplifyNumber(
         Math.max(...data.map((item) => item.volume)),
         chart.volumeDigitNumber
       )
     )
+
     view.padding.top = 15 * view.dpr
     view.padding.bottom = 20 * view.dpr
     view.padding.left = 15 * view.dpr
 
-    view.padding.right = Math.round(textWidth)
+    view.padding.right = Math.round(textWidth) + view.scaleHeight + 5 * view.dpr
   }
 
   // 手动更新缩放对象
@@ -270,15 +270,14 @@ export default class Service {
     if (chart.options.loadMore) {
       this.loadMorePending = true
 
-      const newbars = await chart.options.loadMore(firstTickerTime)
+      let newbars = await chart.options.loadMore(firstTickerTime)
       this.loadMorePending = false
       // empty data
       if (!newbars) {
         this.hasMoreData = false
         return
       }
-
-      newbars.sort((a, b) => a.time - b.time)
+      newbars = chart.initBars(newbars)
       const newLastTicker = newbars[newbars.length - 1].time
       // 防止重复
       if (newLastTicker.time === firstTickerTime.time) {

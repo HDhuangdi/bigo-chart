@@ -56,3 +56,13 @@ export function fixNumber (value, fixedLength) {
     return `${intPart}${fixNum}`
   }
 }
+
+export function simplifyNumber (value, fixedLength) {
+  let result
+  if (Number(value) >= 10000) {
+    result = fixNumber(value / 1000, 2) + 'k'
+  } else {
+    result = fixNumber(value, fixedLength)
+  }
+  return result
+}

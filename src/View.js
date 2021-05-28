@@ -1,6 +1,6 @@
 import Color from './Color.js'
 import Constant from './Constant.js'
-import { dateFormat, fixNumber } from './utils'
+import { dateFormat, fixNumber, simplifyNumber } from './utils'
 
 export default class View {
   service
@@ -216,6 +216,7 @@ export default class View {
     // 高清化
     this.highDefinition(this.canvas)
     this.highDefinition(this.cursorCanvas)
+    this.scaleHeight = 5 * this.dpr
     // 事件注册
     controller.registerMouseEvents()
 
@@ -343,7 +344,6 @@ export default class View {
     const chart = this.chart
 
     const xAxisPosition = service.calcXAxisCoordinate()
-    this.scaleHeight = 5 * this.dpr
 
     // 轴线
     chart.canvasUtils.drawLine(
@@ -375,7 +375,7 @@ export default class View {
         '#24272C'
       )
 
-      this.drawLabels({ x, y: undefined }, data.time)
+      this.drawLabels({ x, y: undefined }, data.time, 'x')
     }
   }
 
@@ -411,7 +411,7 @@ export default class View {
         { x: this.chartWidth + this.padding.left, y: data.y },
         '#24272C'
       )
-      this.drawLabels({ x: undefined, y: data.y }, data.value)
+      this.drawLabels({ x: undefined, y: data.y }, data.value, 'y', 'price')
     })
 
     if (!chart.options.hasVolume) return
@@ -432,29 +432,36 @@ export default class View {
         { x: this.chartWidth + this.padding.left, y: data.y },
         '#24272C'
       )
-      this.drawLabels({ x: undefined, y: data.y }, data.value)
+      this.drawLabels({ x: undefined, y: data.y }, data.value, 'y', 'volume')
     })
   }
 
   // 绘制轴线标签
-  drawLabels (potision, value) {
+  drawLabels (potision, value, axis, type) {
     const chart = this.chart
 
     let _value = value
     const textPos = { x: 0, y: 0 }
-    if (potision.x) {
+    if (axis === 'x') {
       // x轴处理
       _value = dateFormat('HH:MM', new Date(value))
       textPos.x = potision.x
       textPos.y = this.chartHeight + this.padding.top + this.scaleHeight
-    } else {
+    } else if (axis === 'y') {
       // y轴处理
-      _value = fixNumber(_value, chart.priceDigitNumber)
+
+      if (type === 'volume') {
+        _value = simplifyNumber(_value, chart.volumeDigitNumber)
+      } else {
+        _value = fixNumber(_value, chart.priceDigitNumber)
+      }
+
       textPos.x = Math.round(
         this.padding.left + this.chartWidth + this.scaleHeight + 2 * this.dpr
       )
       textPos.y = potision.y
     }
+
     chart.canvasUtils.drawText(
       textPos.x,
       textPos.y,
@@ -503,8 +510,6 @@ export default class View {
     let lastPosition = { x: 0, y: 0 }
 
     for (const ticker of realData) {
-      service.formatTickerData(ticker)
-
       const closePosition = service.mapDataToCoordinate(
         ticker.time,
         ticker.close
@@ -533,9 +538,6 @@ export default class View {
   drawCandle (ticker) {
     const service = this.service
     const chart = this.chart
-
-    // 格式化行情数据
-    service.formatTickerData(ticker)
 
     const status = ticker.status
 
@@ -737,7 +739,7 @@ export default class View {
     const { domUtils } = chart
 
     const valueSpan = chart.domUtils.getDOMElm(`#${Constant.VOL_VALUE_ID}`)
-    valueSpan.innerHTML = fixNumber(info.volume, chart.volumeDigitNumer)
+    valueSpan.innerHTML = simplifyNumber(info.volume, chart.volumeDigitNumber)
     domUtils.setStyle(valueSpan, { color: Color[info.status] })
   }
 
@@ -865,7 +867,9 @@ export default class View {
       }
     ]
     const _text =
-      type === 'price' ? fixNumber(text, chart.priceDigitNumber) : text
+      type === 'price'
+        ? fixNumber(text, chart.priceDigitNumber)
+        : simplifyNumber(text, chart.volumeDigitNumber)
     const { width: textWidth } = utils.getTextWidthAndHeight(
       this.axisLabelSize * this.dpr,
       'sans-serif',
