@@ -24,3 +24,11 @@ export function dateFormat (fmt, date) {
 export function warn (msg) {
   throw new Error('[bigo-chart warn]:' + msg)
 }
+
+export function mergeObject (oldObj, newObj) {
+  for (const key in newObj) {
+    oldObj[key] = newObj[key]
+  }
+
+  return oldObj
+}

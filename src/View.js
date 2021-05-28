@@ -26,8 +26,8 @@ export default class View {
   klineChartHeight
   // 交易量图表高度
   volumeChartHeight = 0
-  // x轴显示的单位数 默认120分钟的数据
-  xAxisUnitsVisiable = 1000 * 60 * 120
+  // x轴显示的单位数
+  xAxisUnitsVisiable
   // y轴显示的单位数 默认8个
   chartYAxisUnitsVisiable = 8
   // y轴显示的单位数 默认4个
@@ -183,7 +183,7 @@ export default class View {
     const volSpan = chart.domUtils.createElm('span', {
       id: Constant.VOL_SPAN_ID
     })
-    volSpan.innerHTML = `Vol(${chart.options.volumeSymbol}):`
+    volSpan.innerHTML = `Vol(${chart.options.symbol}):`
     const volValue = chart.domUtils.createElm('span', {
       id: Constant.VOL_VALUE_ID
     })
@@ -256,31 +256,28 @@ export default class View {
   }
 
   // 绘制主画布
-  drawMainCanvas (drawAll) {
-    const { service } = this
-    if (!drawAll) {
-      this.resize()
-      // 如果为用户控制dataZoom,就只需updte,否则就自动算dataZoom
-      service.calcDataZoom(service.dataZoom.user ? 'update' : 'init')
-      this.drawTickerInfo()
-    }
+  drawMainCanvas () {
+    const { service, chart } = this
+    if (chart.switchPending) return
+    this.resize()
+    // 如果为用户控制dataZoom,就只需updte,否则就自动算dataZoom
+    service.calcDataZoom(service.dataZoom.user ? 'update' : 'init')
     window.requestAnimationFrame(() => {
       this.clearCanvas()
       this.drawBg()
       this.drawAxis()
       this.drawMAs()
-      this.drawTicker()
+      this.drawTickers()
       this.drawLastTickerPrice()
+      this.drawTickerInfo()
     })
   }
 
   // 绘制指针画布
   drawCursorCanvas (drawAll) {
-    const { service, controller } = this
+    const { controller, chart } = this
+    if (chart.switchPending) return
     if (!drawAll) {
-      this.resize()
-      // 如果为用户控制dataZoom,就只需updte,否则就自动算dataZoom
-      service.calcDataZoom(service.dataZoom.user ? 'update' : 'init')
       this.drawTickerInfo()
     }
     window.requestAnimationFrame(() => {
@@ -290,6 +287,12 @@ export default class View {
         controller.nowMousePosition.y
       )
     })
+  }
+
+  // 绘制全部画布
+  draw () {
+    this.drawMainCanvas()
+    this.drawCursorCanvas(true)
   }
 
   // 绘制logo
@@ -303,17 +306,6 @@ export default class View {
       logoWidth,
       logoHeight
     )
-  }
-
-  // 绘制全部画布
-  draw () {
-    const { service } = this
-    this.resize()
-    // 如果为用户控制dataZoom,就只需updte,否则就自动算dataZoom
-    service.calcDataZoom(service.dataZoom.user ? 'update' : 'init')
-    this.drawTickerInfo()
-    this.drawCursorCanvas(true)
-    this.drawMainCanvas(true)
   }
 
   // 绘制背景
@@ -338,7 +330,6 @@ export default class View {
   // 绘制坐标轴
   drawAxis () {
     const service = this.service
-
     // 计算单位
     service.calcUnitToXAxisPx()
     service.calcUnitToYAxisPx()
@@ -476,11 +467,62 @@ export default class View {
   }
 
   // 绘制行情图
-  drawTicker () {
-    const { service, chart } = this
+  drawTickers () {
+    const { chart, service } = this
 
+    this.candleMargin = chart.tickerUnit / 20 / service.unitToXAxisPx // 蜡烛间距为 1/20 k线单位所对应的宽度
+    this.candleWidth = Math.round(
+      chart.tickerUnit / service.unitToXAxisPx - 2 * this.candleMargin
+    )
+
+    if (chart.chartType === Constant.CHART_TYPE_CANDLE) {
+      this.drawCandleChart()
+    } else if (chart.chartType === Constant.CHART_TYPE_LINE) {
+      this.drawLineChart()
+    }
+  }
+
+  // 绘制蜡烛图
+  drawCandleChart () {
+    const { service, chart } = this
     service.dataZoom.realData.forEach((ticker) => {
       this.drawCandle(ticker)
+      if (chart.options.hasVolume) {
+        this.drawVolume(ticker)
+      }
+    })
+  }
+
+  // 绘制折线图
+  drawLineChart () {
+    const { service, chart } = this
+    const realData = service.dataZoom.realData
+
+    this.ctx.beginPath()
+    this.ctx.strokeStyle = '#fff'
+    let lastPosition = { x: 0, y: 0 }
+
+    for (const ticker of realData) {
+      service.formatTickerData(ticker)
+
+      const closePosition = service.mapDataToCoordinate(
+        ticker.time,
+        ticker.close
+      )
+      if (
+        lastPosition.x < this.padding.left ||
+        closePosition.x > this.padding.left + this.chartWidth
+      ) {
+        lastPosition = closePosition
+        continue
+      }
+      chart.canvasUtils.drawLine(lastPosition, closePosition, undefined, false)
+      lastPosition = closePosition
+    }
+
+    this.ctx.stroke()
+
+    realData.forEach((ticker) => {
       if (chart.options.hasVolume) {
         this.drawVolume(ticker)
       }
@@ -501,10 +543,7 @@ export default class View {
     const closePosition = service.mapDataToCoordinate(ticker.time, ticker.close)
     const highPosition = service.mapDataToCoordinate(ticker.time, ticker.high)
     const lowPosition = service.mapDataToCoordinate(ticker.time, ticker.low)
-    this.candleMargin = chart.tickerUnit / 20 / service.unitToXAxisPx // 蜡烛间距为 1/20 k线单位所对应的宽度
-    this.candleWidth = Math.round(
-      chart.tickerUnit / service.unitToXAxisPx - 2 * this.candleMargin
-    )
+
     let x =
       status === 'up'
         ? closePosition.x - this.candleWidth / 2
@@ -582,9 +621,9 @@ export default class View {
 
   // 绘制MA线
   drawMAs () {
-    const service = this.service
-    const chart = this.chart
+    const { service, chart } = this
     service.calcMAPoints()
+    if (chart.chartType === Constant.CHART_TYPE_LINE) return
     chart.MAOptions.forEach((option) => {
       const MAPoints = option.points
       const MAPointsPositions = MAPoints.map((point) =>

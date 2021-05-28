@@ -50,8 +50,12 @@ export default class Service {
   // 计算x轴所有标签的坐标
   calcXAxisCoordinate () {
     const { chart } = this
+    // 比值
+    const ratio =
+      (this.dataZoom.xAxisEndValue - this.dataZoom.xAxisStartValue) /
+      chart.tickerUnit
     // 每隔count个画一个刻度
-    const count = Math.floor(this.dataZoom.data.length / 8)
+    const count = Math.floor(ratio / 10)
     const xAxisData = []
     for (let index = 0; index < chart.bars.length; index += count) {
       xAxisData.push({
@@ -154,6 +158,7 @@ export default class Service {
     const { chart, view } = this
 
     if (type === 'init') {
+      view.xAxisUnitsVisiable = chart.tickerUnit * 120
       // x轴更新
       const newDataZoomXAxisEndValue =
         chart.bars[chart.bars.length - 1].time + 3 * chart.tickerUnit

@@ -20,9 +20,16 @@
         height: 80%;
         width: 100%;
       }
+      button {
+        padding: 5px 20px;
+        margin: 10px 0 10px 10px;
+      }
     </style>
   </head>
   <body>
+    <button onclick="switchChart()">switch type</button>
+    <button onclick="switchInterval('1m')">1m</button>
+    <button onclick="switchInterval('5m')">5m</button>
     <div id="chart"></div>
     <script src="./axios.js"></script>
     <script src="../dist/index.js"></script>
@@ -31,11 +38,27 @@
       const http = axios.create({
         baseURL: "https://api.binance.com",
       })
+      let chart
+      let chartType = 1
 
-      function getKline(endTime) {
+      function initChart(bars) {
+        chart = new BigoChart({
+          el: "#chart",
+          bars,
+          symbol: "ETH",
+          hasVolume: true,
+          logo: "./logo.png",
+          chartType,
+          loadMore: async (endTime) => getKline(endTime, "1m"),
+        })
+      }
+
+      function getKline(endTime, interval) {
         return new Promise((resolve) => {
           http
-            .get(`/api/v3/klines?symbol=ETHUSDT&interval=1m&endTime=${endTime}`)
+            .get(
+              `/api/v3/klines?symbol=ETHUSDT&interval=${interval}&endTime=${endTime}`
+            )
             .then(({ data }) => {
               let bars = data.map((item) => ({
                 time: Number(item[0]),
@@ -50,17 +73,30 @@
         })
       }
 
-      const endTime = new Date().getTime()
-      let chart
-      getKline(endTime).then((bars) => {
-        chart = new BigoChart({
-          el: "#chart",
-          bars,
-          volumeSymbol: "ETH",
-          hasVolume: true,
-          // logo: "./logo.png",
-          loadMore: async (endTime) => getKline(endTime),
+      function switchChart() {
+        if (!chart) return
+        if (chartType === 1) {
+          chartType = 2
+        } else {
+          chartType = 1
+        }
+        chart.setChartType(chartType)
+      }
+
+      function switchInterval(interval) {
+        if (!chart) return
+        const endTime = new Date().getTime()
+        getKline(endTime, interval).then((bars) => {
+          chart.setOptions({
+            bars,
+            loadMore: async (endTime) => getKline(endTime, interval),
+          })
         })
+      }
+
+      const endTime = new Date().getTime()
+      getKline(endTime, "1m").then((bars) => {
+        initChart(bars)
       })
 
       // SUBSCRIBE DATA

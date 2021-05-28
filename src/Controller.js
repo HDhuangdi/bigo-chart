@@ -9,8 +9,6 @@ export default class Controller {
   prevMousePosition = {}
   // 移动中的鼠标定位
   nowMousePosition = {}
-  // 拖动系数
-  dragCoefficient = 1000
 
   inject (view, service, chart) {
     this.view = view
@@ -46,24 +44,22 @@ export default class Controller {
     if (!this.isMouseDown) return view.drawCursorCanvas()
     service.dataZoom.user = true
     const diffX = this.prevMousePosition.x - this.nowMousePosition.x
+    // 拖动的距离
+    const distance = diffX * service.unitToXAxisPx
 
     const firstCandleTime = chart.bars[0].time
     const newDataZoomXAxisStartValue =
-      service.dataZoom.xAxisStartValue + this.dragCoefficient * diffX
-    const newDataZoomXAxisEndValue =
-      service.dataZoom.xAxisEndValue + this.dragCoefficient * diffX
+      service.dataZoom.xAxisStartValue + distance
+    const newDataZoomXAxisEndValue = service.dataZoom.xAxisEndValue + distance
 
-    // 分页 提前100个k线单位开始请求
+    // 分页 提前300个k线单位开始请求
     if (
-      newDataZoomXAxisStartValue - 100 * chart.tickerUnit <=
+      newDataZoomXAxisStartValue - 300 * chart.tickerUnit <=
       firstCandleTime
     ) {
       service.loadMoreData()
-      return
     }
 
-    // 更新拖动系数
-    this.dragCoefficient = (view.xAxisUnitsVisiable / chart.tickerUnit) * 40
     service.updateDataZoom(newDataZoomXAxisStartValue, newDataZoomXAxisEndValue)
 
     view.draw()
@@ -91,19 +87,21 @@ export default class Controller {
       // FF浏览器使用的是detail,其值为“正负3”
       delta = -e.detail / 3
     }
+    if (!delta) return
+
     let newDataZoomXAxisStartValue
     let newDataZoomXAxisEndValue
+    const distance = delta * service.unitToXAxisPx * 10
     if (delta >= 0) {
       if (service.dataZoom.data.length <= 20) return
       // 放大
-      newDataZoomXAxisStartValue = service.dataZoom.xAxisStartValue + 1000 * 120
-      newDataZoomXAxisEndValue = service.dataZoom.xAxisEndValue - 1000 * 120
     } else {
       if (service.dataZoom.data.length >= 200) return
       // 缩小
-      newDataZoomXAxisStartValue = service.dataZoom.xAxisStartValue - 1000 * 120
-      newDataZoomXAxisEndValue = service.dataZoom.xAxisEndValue + 1000 * 120
     }
+    /** dis */
+    newDataZoomXAxisStartValue = service.dataZoom.xAxisStartValue + distance // eslint-disable-line
+    newDataZoomXAxisEndValue = service.dataZoom.xAxisEndValue - distance // eslint-disable-line
 
     service.updateDataZoom(newDataZoomXAxisStartValue, newDataZoomXAxisEndValue)
     view.draw()

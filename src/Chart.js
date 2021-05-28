@@ -1,17 +1,19 @@
-import { domUtils, canvasUtils, warn } from './utils'
+import { domUtils, canvasUtils, warn, mergeObject } from './utils'
 import './styles/chart.css'
 import Controller from './Controller'
 import Service from './Service'
 import View from './View'
+import Constant from './Constant'
 
 export default class BigoChart {
   view
   service
   controller
 
-  options
+  options = {}
   bars
   container
+  chartType = Constant.CHART_TYPE_LINE /** 1:line 2:candle */
 
   canvasUtils
   cursorCanvasUtils
@@ -45,6 +47,8 @@ export default class BigoChart {
   // 当前MA中最大的周期,用于计算MA列表需要截取bars上的范围
   maxMAInterval
 
+  switchPending = false // 标志正在切换图表数据源
+
   constructor (options) {
     // 依赖生成并注入
     this.view = new View()
@@ -52,7 +56,7 @@ export default class BigoChart {
     this.controller = new Controller()
     this.inject()
 
-    this.checkOptions(options)
+    this.updateOptions(options)
     this.container = document.querySelector(this.options.el)
 
     if (!this.container) {
@@ -62,6 +66,25 @@ export default class BigoChart {
     this.view.createElements()
     this.canvasUtils = canvasUtils(this.view.ctx)
     this.cursorCanvasUtils = canvasUtils(this.view.cursorCtx)
+
+    this.view.initChart() // 17ms
+    this.setChartType(this.options.chartType)
+  }
+
+  // 依赖注入
+  inject () {
+    this.service.inject(this.view, this.controller, this)
+    this.controller.inject(this.view, this.service, this)
+    this.view.inject(this.service, this.controller, this)
+  }
+
+  // 更新配置项
+  updateOptions (options) {
+    if (!options || !Object.keys(options).length) {
+      warn('invalid options')
+    }
+
+    mergeObject(this.options, options)
 
     if (options.MA) {
       this.MAOptions = options.MA
@@ -75,23 +98,6 @@ export default class BigoChart {
       this.options.hasVolume = this.bars.every((bar) => !!bar.volume)
     }
     this.tickerUnit = this.bars[1].time - this.bars[0].time
-
-    this.view.initChart() // 17ms
-  }
-
-  // 依赖注入
-  inject () {
-    this.service.inject(this.view, this.controller, this)
-    this.controller.inject(this.view, this.service, this)
-    this.view.inject(this.service, this.controller, this)
-  }
-
-  // 检查配置项
-  checkOptions (options) {
-    if (!options || !Object.keys(options).length) {
-      warn('invalid options')
-    }
-    this.options = options
   }
 
   // 订阅数据
@@ -129,5 +135,31 @@ export default class BigoChart {
     if (x <= this.view.chartWidth) {
       this.view.draw()
     }
+  }
+
+  // 更换图表类型
+  setChartType (chartType) {
+    switch (Number(chartType)) {
+      case Constant.CHART_TYPE_LINE:
+        this.chartType = Constant.CHART_TYPE_LINE
+        this.view.draw()
+        break
+      case Constant.CHART_TYPE_CANDLE:
+        this.chartType = Constant.CHART_TYPE_CANDLE
+        this.view.draw()
+        break
+      default:
+        this.chartType = Constant.CHART_TYPE_CANDLE
+    }
+  }
+
+  // 更换图表数据源
+  setOptions (newOptions) {
+    this.switchPending = true
+
+    this.updateOptions(newOptions)
+    this.service.dataZoom.user = false
+    this.switchPending = false
+    this.view.draw()
   }
 }

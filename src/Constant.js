@@ -19,4 +19,7 @@ export default class Constant {
   static CHANGE_VALUE_ID = '__change-value__'
   static AMPLITUDE_SPAN_ID = '__amplitude-span__'
   static AMPLITUDE_VALUE_ID = '__amplitude-value__'
+
+  static CHART_TYPE_LINE = 1
+  static CHART_TYPE_CANDLE = 2
 }
