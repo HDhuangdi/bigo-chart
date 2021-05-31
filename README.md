@@ -27,9 +27,12 @@ const chart = new BigoChart(option)
 
 ## 效果展示
 
+- 支持蜡烛图、分时图、交易量图。
+- 支持视图缩放、拖拽、分页
+
 ![effect](https://img-blog.csdnimg.cn/20210531101251775.gif#pic_center)
 
-### 支持视图实时更新
+- 支持视图实时更新:
 
 ![effect](https://img-blog.csdnimg.cn/20210531101551325.gif#pic_center)
 
