@@ -2,7 +2,11 @@
 
 使用 canvas 绘制,可用于股票,基金,加密货币的轻量级交易图表库,支持分时图,蜡烛图
 
-## 引入
+## 安装
+
+```bash
+npm install bigo-chart -S
+```
 
 ```javascript
 import BigoChart from "bigo-chart"
