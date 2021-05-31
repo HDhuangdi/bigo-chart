@@ -8,14 +8,20 @@
 npm install bigo-chart -S
 ```
 
+## 快速使用
+
 ```javascript
 import BigoChart from "bigo-chart"
 import "bigo-chart/dist/chart.css"
-```
 
-## 使用
-
-```javascript
+const option = {
+  el: "#chart",
+  bars,
+  symbol: "ETH",
+  hasVolume: true,
+  logo: "./logo.png",
+  chartType: 1,
+}
 const chart = new BigoChart(option)
 ```
 
@@ -30,20 +36,6 @@ const chart = new BigoChart(option)
 | chartType | 图表类型                          | 1: 分时图; 2: 蜡烛图                                                       | number                     |
 | loadMore  | 分页回调,接受一个参数 endTime     | /                                                                          | (endTime: number) => :bars |
 
-## 配置示例
-
-```javascript
-let option = {
-  el: "#chart",
-  bars,
-  symbol: "ETH",
-  hasVolume: true,
-  logo: "./logo.png",
-  chartType: 1,
-  loadMore: async (endTime) => getKline(endTime, "1m"),
-}
-```
-
 ## API
 
 ### `subscribeBars(close, volume, time)`
@@ -53,3 +45,7 @@ let option = {
 ### `chart.setOption(option)`
 
 产生新的配置,bigo-chart 会将新配置项和老配置项进行合并取舍,由此产生新的图表样式.
+
+## LICENSE
+
+[MIT](https://en.wikipedia.org/wiki/MIT_License)
