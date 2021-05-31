@@ -25,6 +25,14 @@ const option = {
 const chart = new BigoChart(option)
 ```
 
+## 效果展示
+
+![effect](https://img-blog.csdnimg.cn/20210531101251775.gif#pic_center)
+
+### 支持视图实时更新
+
+![effect](https://img-blog.csdnimg.cn/20210531101551325.gif#pic_center)
+
 ## 配置
 
 | 配置名称  | 配置说明                          | 可选值                                                                     | 类型                       |
