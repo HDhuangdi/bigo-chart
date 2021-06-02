@@ -1,9 +1,9 @@
-import { domUtils, canvasUtils, warn, mergeObject } from './utils'
-import './styles/chart.css'
-import Controller from './Controller'
-import Service from './Service'
-import View from './View'
-import Constant from './Constant'
+import { domUtils, canvasUtils, warn, mergeObject } from "./utils"
+import "./styles/chart.css"
+import Controller from "./Controller"
+import Service from "./Service"
+import View from "./View"
+import Constant from "./Constant"
 
 export default class BigoChart {
   view
@@ -29,17 +29,17 @@ export default class BigoChart {
   // MA list
   MAOptions = [
     {
-      color: '#FF00FF',
-      interval: 5
+      color: "#FF00FF",
+      interval: 5,
     },
     {
-      color: '#CF3049',
-      interval: 10
+      color: "#CF3049",
+      interval: 10,
     },
     {
-      color: '#00CCCC',
-      interval: 30
-    }
+      color: "#00CCCC",
+      interval: 30,
+    },
   ]
 
   // 绘制MA所需的数据
@@ -49,7 +49,7 @@ export default class BigoChart {
 
   switchPending = false // 标志正在切换图表数据源
 
-  constructor (options) {
+  constructor(options) {
     // 依赖生成并注入
     this.view = new View()
     this.service = new Service()
@@ -60,7 +60,7 @@ export default class BigoChart {
     this.container = document.querySelector(this.options.el)
 
     if (!this.container) {
-      warn('invalid dom')
+      warn("invalid dom")
     }
     this.domUtils = domUtils(this.container)
     this.view.createElements()
@@ -72,16 +72,16 @@ export default class BigoChart {
   }
 
   // 依赖注入
-  inject () {
+  inject() {
     this.service.inject(this.view, this.controller, this)
     this.controller.inject(this.view, this.service, this)
     this.view.inject(this.service, this.controller, this)
   }
 
   // 更新配置项
-  updateOptions (options) {
+  updateOptions(options) {
     if (!options || !Object.keys(options).length) {
-      warn('invalid options')
+      warn("invalid options")
     }
 
     mergeObject(this.options, options)
@@ -98,11 +98,10 @@ export default class BigoChart {
       this.options.hasVolume = this.bars.every((bar) => !!bar.volume)
     }
     this.tickerUnit = this.bars[1].time - this.bars[0].time
-
     this.setChartType(this.options.chartType)
   }
 
-  initBars (bars) {
+  initBars(bars) {
     bars.forEach((bar) => {
       this.service.formatTickerData(bar)
     })
@@ -111,7 +110,7 @@ export default class BigoChart {
   }
 
   // 更换图表类型
-  setChartType (chartType) {
+  setChartType(chartType) {
     switch (Number(chartType)) {
       case Constant.CHART_TYPE_LINE:
         this.chartType = Constant.CHART_TYPE_LINE
@@ -125,7 +124,7 @@ export default class BigoChart {
   }
 
   // 订阅数据
-  subscribeBars (value, volume, time) {
+  subscribeBars(value, volume, time) {
     const lastCandle = this.bars[this.bars.length - 1]
     const candleToUpdate = {
       open: lastCandle.open,
@@ -133,7 +132,7 @@ export default class BigoChart {
       low: lastCandle.low,
       close: value,
       volume: lastCandle.volume,
-      time: lastCandle.time
+      time: lastCandle.time,
     }
     if (time - lastCandle.time >= this.tickerUnit) {
       // new candle
@@ -164,7 +163,7 @@ export default class BigoChart {
   }
 
   // 更换图表数据源
-  setOptions (newOptions) {
+  setOptions(newOptions) {
     this.switchPending = true
     this.updateOptions(newOptions)
     this.service.dataZoom.user = false

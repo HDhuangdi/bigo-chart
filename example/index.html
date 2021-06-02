@@ -24,6 +24,16 @@
         padding: 5px 20px;
         margin: 10px 0 10px 10px;
       }
+      /* .getBoundingClientRect {
+        position: absolute;
+        width: 100px;
+        height: 100px;
+        border: 1px solid #000;
+        background-color: bisque;
+        top: 50px;
+        left: 0;
+        z-index: 999;
+      } */
     </style>
   </head>
   <body>
@@ -44,6 +54,7 @@
 
       function initChart(bars) {
         chart = new BigoChart({
+          interval: "1m",
           el: "#chart",
           bars,
           symbol: "ETH",
@@ -94,6 +105,7 @@
         const endTime = new Date().getTime()
         getKline(endTime, interval).then((bars) => {
           chart.setOptions({
+            interval,
             bars,
             chartType,
             loadMore: async (endTime) => getKline(endTime, interval),
@@ -126,7 +138,6 @@
         let time = data.data.T
         let close = Number(data.data.p)
         let volume = Number(data.data.q)
-
         chart.subscribeBars(close, volume, time)
       }
     </script>

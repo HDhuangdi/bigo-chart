@@ -21,6 +21,7 @@ const option = {
   hasVolume: true,
   logo: "./logo.png",
   chartType: 1,
+  interval: "1m",
 }
 const chart = new BigoChart(option)
 ```
@@ -46,6 +47,7 @@ const chart = new BigoChart(option)
 | logo      | 公司 logo 路径                    | /                                                                          | string                     |
 | chartType | 图表类型                          | 1: 分时图; 2: 蜡烛图                                                       | number                     |
 | loadMore  | 分页回调,接受一个参数 endTime     | /                                                                          | (endTime: number) => :bars |
+| interval  | 周期                              | 1m,5m,15m,1d                                                               | string                     |
 
 ## API
 
