@@ -368,10 +368,11 @@ export default class Service {
       x - view.padding.left,
       y - view.padding.top
     )
-
-    // TODO (有点小问题) 寻找鼠标所指的k线
+    // TODO 寻找鼠标所指的k线
     const [ticker] = this.dataZoom.data.filter(
-      (data) => data.time <= time && data.time + chart.tickerUnit >= time
+      (data) =>
+        data.time - chart.tickerUnit / 2 <= time &&
+        data.time + chart.tickerUnit / 2 >= time
     )
 
     return { ticker, value, type }
