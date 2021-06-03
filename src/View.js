@@ -263,11 +263,12 @@ export default class View {
   drawMainCanvas () {
     const { service, chart } = this
     if (chart.switchPending) return
-    this.resize()
-    // 如果为用户控制dataZoom,就只需updte,否则就自动算dataZoom   初始化为 init
-    // 得到x  xAxisStartValue,xAxisEndValue，y klineYAxisEndValue,klineYAxisStartValue  和 volumeYAxisEndValue，volumeYAxisStartValue
-    service.calcDataZoom(service.dataZoom.user ? 'update' : 'init')
+
     window.requestAnimationFrame(() => {
+      this.resize()
+      // 如果为用户控制dataZoom,就只需updte,否则就自动算dataZoom   初始化为 init
+      // 得到x  xAxisStartValue,xAxisEndValue，y klineYAxisEndValue,klineYAxisStartValue  和 volumeYAxisEndValue，volumeYAxisStartValue
+      service.calcDataZoom(service.dataZoom.user ? 'update' : 'init')
       // 清除画布
       this.clearCanvas()
       // 绘制背景 logo
@@ -289,13 +290,14 @@ export default class View {
   drawCursorCanvas () {
     const { controller, chart } = this
     if (chart.switchPending) return
-
-    this.drawTickerInfo()
-    this.clearCursorCanvas()
-    this.drawCursorCross(
-      controller.nowMousePosition.x,
-      controller.nowMousePosition.y
-    )
+    window.requestAnimationFrame(() => {
+      this.drawTickerInfo()
+      this.clearCursorCanvas()
+      this.drawCursorCross(
+        controller.nowMousePosition.x,
+        controller.nowMousePosition.y
+      )
+    })
   }
 
   // 绘制logo

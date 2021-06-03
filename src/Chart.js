@@ -42,8 +42,6 @@ export default class BigoChart {
     }
   ]
 
-  // 绘制MA所需的数据
-  MAData
   // 当前MA中最大的周期,用于计算MA列表需要截取bars上的范围
   maxMAInterval
 

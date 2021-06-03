@@ -175,20 +175,20 @@ export default class Service {
         this.dataZoom.xAxisEndValue - this.dataZoom.xAxisStartValue
     }
 
-    // y轴
-
-    // 实际在屏幕上显示出的data
-    this.dataZoom.data = chart.bars.filter(
-      (bar) =>
-        bar.time <= this.dataZoom.xAxisEndValue &&
-        bar.time >= this.dataZoom.xAxisStartValue
-    )
+    // 计算MA线所需数据 this.dataZoom.MAData
+    this.calcMAList()
 
     // 真正截取的data (为了拖动连贯性,需要前后各多拿1个)
-    this.dataZoom.realData = chart.bars.filter(
+    this.dataZoom.realData = this.dataZoom.MAData.filter(
       (bar) =>
         bar.time <= this.dataZoom.xAxisEndValue + chart.tickerUnit &&
         bar.time >= this.dataZoom.xAxisStartValue - chart.tickerUnit
+    )
+    // 实际在屏幕上显示出的data
+    this.dataZoom.data = this.dataZoom.realData.filter(
+      (bar) =>
+        bar.time <= this.dataZoom.xAxisEndValue &&
+        bar.time >= this.dataZoom.xAxisStartValue
     )
 
     // 行情y轴最高/最低的数据
@@ -212,27 +212,26 @@ export default class Service {
   // 计算MA points
   calcMAPoints () {
     const chart = this.chart
-    // 在页面上的数据 获取chart.MAData
-    this.calcMAList()
     chart.MAOptions.forEach(({ interval }, index, arr) => {
       const MAPoints = []
-      // MA线求和的队列
-      const reduce = []
-      for (let index = 0, l = chart.MAData.length; index < l; index++) {
+      // MA线求和的收集器
+      const reducer = []
+      for (let index = 0, l = this.dataZoom.MAData.length; index < l; index++) {
+        const ticker = this.dataZoom.MAData[index]
         const point = {
-          value: chart.MAData[index].close,
-          time: chart.MAData[index].time
+          value: ticker.close,
+          time: ticker.time
         }
-        reduce.push(point)
+        reducer.push(point)
         if (index >= interval - 1) {
           MAPoints.push({
             value:
-              getAVG(reduce.map((item) => item.value)).toFixed(
+              getAVG(reducer.map((item) => item.value)).toFixed(
                 chart.priceDigitNumber
               ) * 1,
             time: point.time
           })
-          reduce.shift()
+          reducer.shift()
         }
       }
       arr[index].points = MAPoints
@@ -242,7 +241,7 @@ export default class Service {
   // 计算当前屏幕上需要显示完全的MA线所需截取bars的范围
   calcMAList () {
     const chart = this.chart
-    chart.MAData = chart.bars.filter(
+    this.dataZoom.MAData = chart.bars.filter(
       (bar) =>
         bar.time <= this.dataZoom.xAxisEndValue &&
         bar.time >=
