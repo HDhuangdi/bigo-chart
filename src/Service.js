@@ -1,5 +1,4 @@
-import { slice } from "core-js/core/array"
-import { getAVG, simplifyNumber } from "./utils"
+import { getAVG, simplifyNumber } from './utils'
 
 export default class Service {
   view
@@ -21,14 +20,14 @@ export default class Service {
   // y轴缓冲系数
   yAxisBuffer = 0.1
 
-  inject(view, controller, chart) {
+  inject (view, controller, chart) {
     this.view = view
     this.controller = controller
     this.chart = chart
   }
 
   // 计算1像素等于多少x轴单位    ms/px
-  calcUnitToXAxisPx() {
+  calcUnitToXAxisPx () {
     const { view } = this
     this.unitToXAxisPx =
       (this.dataZoom.xAxisEndValue - this.dataZoom.xAxisStartValue) /
@@ -36,7 +35,7 @@ export default class Service {
   }
 
   // 计算1像素等于多少y轴单位
-  calcUnitToYAxisPx() {
+  calcUnitToYAxisPx () {
     const { view } = this
 
     // 根据各自的图表高度和y轴范围算出1px为多少y轴单位
@@ -50,7 +49,7 @@ export default class Service {
   }
 
   // 计算x轴所有标签的坐标
-  calcXAxisCoordinate() {
+  calcXAxisCoordinate () {
     const { chart } = this
     // 比值
     const ratio =
@@ -64,7 +63,7 @@ export default class Service {
     for (let index = 0; index < chart.bars.length; index += count) {
       xAxisData.push({
         time: chart.bars[index].time,
-        value: 0,
+        value: 0
       })
     }
 
@@ -74,14 +73,14 @@ export default class Service {
       return {
         x: res.x,
         y: 0,
-        time: data.time,
+        time: data.time
       }
     })
     return xAxisPosition
   }
 
   // 计算y轴所有标签的坐标
-  calcYAxisCoordinate(type = "candle") {
+  calcYAxisCoordinate (type = 'candle') {
     const { view } = this
 
     let intervalValue
@@ -89,7 +88,7 @@ export default class Service {
     // volume标签可以画到的最高位置
     const volumeLabelEndValue = this.highestVolume
 
-    if (type === "candle") {
+    if (type === 'candle') {
       interval = view.chartYAxisUnitsVisiable
       intervalValue =
         (this.dataZoom.klineYAxisEndValue -
@@ -106,7 +105,7 @@ export default class Service {
 
     for (let index = 0; index < interval; index++) {
       let value
-      if (type === "candle") {
+      if (type === 'candle') {
         value = this.dataZoom.klineYAxisStartValue + index * intervalValue
       } else {
         value = this.dataZoom.volumeYAxisStartValue + index * intervalValue
@@ -116,18 +115,18 @@ export default class Service {
       yAxisData.push({
         x: view.padding.left + view.chartWidth,
         y: res.y,
-        value,
+        value
       })
     }
     return yAxisData
   }
 
   // 计算chart padding
-  calcPadding(data) {
+  calcPadding (data) {
     const { chart, view } = this
     const { width: textWidth } = chart.canvasUtils.getTextWidthAndHeight(
       view.axisLabelSize * view.dpr,
-      "sans-serif",
+      'sans-serif',
       simplifyNumber(
         Math.max(...data.map((item) => item.volume)),
         chart.volumeDigitNumber
@@ -141,7 +140,7 @@ export default class Service {
   }
 
   // 手动更新缩放对象
-  updateDataZoom(newDataZoomXAxisStartValue, newDataZoomXAxisEndValue) {
+  updateDataZoom (newDataZoomXAxisStartValue, newDataZoomXAxisEndValue) {
     const { chart } = this
     const lastCandleTime = chart.bars[chart.bars.length - 1].time
     const firstCandleTime = chart.bars[0].time
@@ -158,10 +157,10 @@ export default class Service {
   }
 
   // 自动计算缩放对象
-  calcDataZoom(type = "update") {
+  calcDataZoom (type = 'update') {
     const { chart, view } = this
 
-    if (type === "init") {
+    if (type === 'init') {
       view.xAxisUnitsVisiable = chart.tickerUnit * 120
       // x轴更新
       const newDataZoomXAxisEndValue =
@@ -172,12 +171,12 @@ export default class Service {
         view.xAxisUnitsVisiable -
         3 * chart.tickerUnit
       this.updateDataZoom(newDataZoomXAxisStartValue, newDataZoomXAxisEndValue)
-    } else if (type === "update") {
+    } else if (type === 'update') {
       view.xAxisUnitsVisiable =
         this.dataZoom.xAxisEndValue - this.dataZoom.xAxisStartValue
     }
 
-    //y轴
+    // y轴
 
     // 实际在屏幕上显示出的data
     this.dataZoom.data = chart.bars.filter(
@@ -196,7 +195,7 @@ export default class Service {
     // 行情y轴最高/最低的数据
     const highest = Math.max(...this.dataZoom.realData.map((item) => item.high))
     const lowest = Math.min(...this.dataZoom.realData.map((item) => item.low))
-    //Y轴缓冲系数 最大,最小
+    // Y轴缓冲系数 最大,最小
     this.dataZoom.klineYAxisEndValue =
       highest + (highest - lowest) * this.yAxisBuffer
     this.dataZoom.klineYAxisStartValue =
@@ -212,7 +211,7 @@ export default class Service {
   }
 
   // 计算MA points
-  calcMAPoints() {
+  calcMAPoints () {
     const chart = this.chart
     // 在页面上的数据 获取chart.MAData
     this.calcMAList()
@@ -223,7 +222,7 @@ export default class Service {
       for (let index = 0, l = chart.MAData.length; index < l; index++) {
         const point = {
           value: chart.MAData[index].close,
-          time: chart.MAData[index].time,
+          time: chart.MAData[index].time
         }
         reduce.push(point)
         if (index >= interval - 1) {
@@ -232,7 +231,7 @@ export default class Service {
               getAVG(reduce.map((item) => item.value)).toFixed(
                 chart.priceDigitNumber
               ) * 1,
-            time: point.time,
+            time: point.time
           })
           reduce.shift()
         }
@@ -242,7 +241,7 @@ export default class Service {
   }
 
   // 计算当前屏幕上需要显示完全的MA线所需截取bars的范围
-  calcMAList() {
+  calcMAList () {
     const chart = this.chart
     chart.MAData = chart.bars.filter(
       (bar) =>
@@ -253,19 +252,19 @@ export default class Service {
   }
 
   // 格式化行情数据
-  formatTickerData(ticker) {
+  formatTickerData (ticker) {
     // 状态
-    ticker.status = ticker.close >= ticker.open ? "up" : "down"
+    ticker.status = ticker.close >= ticker.open ? 'up' : 'down'
     // 振幅
     ticker.amplitude =
-      (((ticker.high - ticker.low) * 100) / ticker.low).toFixed(2) + "%"
+      (((ticker.high - ticker.low) * 100) / ticker.low).toFixed(2) + '%'
     // 涨跌幅
     ticker.change =
-      (((ticker.close - ticker.high) * 100) / ticker.low).toFixed(2) + "%"
+      (((ticker.close - ticker.high) * 100) / ticker.low).toFixed(2) + '%'
   }
 
   // 分页逻辑
-  async loadMoreData() {
+  async loadMoreData () {
     const { chart } = this
 
     if (this.loadMorePending || !this.hasMoreData) return
@@ -294,11 +293,11 @@ export default class Service {
   }
 
   // 数据 => 坐标 映射
-  mapDataToCoordinate(time, value, type = "candle") {
+  mapDataToCoordinate (time, value, type = 'candle') {
     const { view } = this
     const position = {
       x: 0,
-      y: 0,
+      y: 0
     }
     // 如果time等于0的话就 return  position.x = 0 减小运算
     if (time === 0) {
@@ -310,8 +309,8 @@ export default class Service {
       )
     }
     // value == 0 return
-    if (!value && type === "candle") return position
-    if (type === "candle") {
+    if (!value && type === 'candle') return position
+    if (type === 'candle') {
       const height =
         (value - this.dataZoom.klineYAxisStartValue) / this.candleUnitToYAxisPx
       position.y = Math.round(view.padding.top + view.klineChartHeight - height)
@@ -325,13 +324,13 @@ export default class Service {
   }
 
   // 坐标 => 数据 映射 (此处的坐标需要传递加上padding后的换算值)
-  mapCoordinateToData(x, y) {
+  mapCoordinateToData (x, y) {
     const { chart, view } = this
 
     const data = {
       time: 0,
       value: 0,
-      type: "",
+      type: ''
     }
 
     data.time = Math.floor(
@@ -342,7 +341,7 @@ export default class Service {
 
     if (yDiff < 0) {
       // TODO volume chart
-      data.type = "volume"
+      data.type = 'volume'
       yDiff = view.chartHeight - y
       data.value =
         (
@@ -356,14 +355,14 @@ export default class Service {
           this.dataZoom.klineYAxisStartValue +
           yDiff * this.candleUnitToYAxisPx
         ).toFixed(chart.priceDigitNumber) * 1
-      data.type = "price"
+      data.type = 'price'
     }
 
     return data
   }
 
   // 根据坐标寻找K线
-  findTicker(x, y) {
+  findTicker (x, y) {
     const { chart, view } = this
 
     // 鼠标所指的坐标映射

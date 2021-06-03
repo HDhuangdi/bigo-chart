@@ -24,23 +24,13 @@
         padding: 5px 20px;
         margin: 10px 0 10px 10px;
       }
-      /* .getBoundingClientRect {
-        position: absolute;
-        width: 100px;
-        height: 100px;
-        border: 1px solid #000;
-        background-color: bisque;
-        top: 50px;
-        left: 0;
-        z-index: 999;
-      } */
     </style>
   </head>
   <body>
-    <button onclick="switchInterval('1m','line')">time</button>
-    <button onclick="switchInterval('1m')">1m</button>
-    <button onclick="switchInterval('5m')">5m</button>
-    <button onclick="switchInterval('1d')">1day</button>
+    <button onclick="switchChart('1m','line')">time</button>
+    <button onclick="switchChart('1m')">1m</button>
+    <button onclick="switchChart('5m')">5m</button>
+    <button onclick="switchChart('1d')">1day</button>
     <div id="chart"></div>
     <script src="./axios.js"></script>
     <script src="../dist/index.js"></script>
@@ -95,7 +85,7 @@
         chart.setChartType(chartType)
       }
 
-      function switchInterval(interval, chartType) {
+      function switchChart(interval, chartType) {
         if (!chart) return
         if (chartType === "line") {
           chartType = 1
@@ -105,7 +95,6 @@
         const endTime = new Date().getTime()
         getKline(endTime, interval).then((bars) => {
           chart.setOptions({
-            interval,
             bars,
             chartType,
             loadMore: async (endTime) => getKline(endTime, interval),
