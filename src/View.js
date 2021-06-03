@@ -218,7 +218,7 @@ export default class View {
     this.highDefinition(this.cursorCanvas)
     // 默认线条粗细
     this.ctx.lineWidth = 1 * this.dpr
-    // 5个物理像素点
+    // 5个逻辑像素点
     this.scaleHeight = 5 * this.dpr
     // 事件注册
     controller.registerMouseEvents()
@@ -454,13 +454,17 @@ export default class View {
 
   // 绘制轴线标签  列如:价格，数量，时间文本
   drawLabels (potision, value, axis, type) {
-    const chart = this.chart
+    const { chart } = this
 
     let _value = value
     const textPos = { x: 0, y: 0 }
     if (axis === 'x') {
       // x轴处理
-      _value = dateFormat('HH:MM', new Date(value))
+      let formatPattern = 'HH:MM'
+      if (chart.tickerUnit >= 1000 * 60 * 60 * 24) {
+        formatPattern = 'YY-mm-dd'
+      }
+      _value = dateFormat(formatPattern, new Date(value))
       textPos.x = potision.x
       textPos.y = this.chartHeight + this.padding.top + this.scaleHeight
     } else if (axis === 'y') {
@@ -736,13 +740,13 @@ export default class View {
     domUtils.setStyle(closeValue, { color: Color[info.status] })
     // change
     const changeValue = chart.domUtils.getDOMElm('#' + Constant.CHANGE_VALUE_ID)
-    changeValue.innerHTML = fixNumber(info.change, 2)
+    changeValue.innerHTML = fixNumber(info.change, 2) + '%'
     domUtils.setStyle(changeValue, { color: Color[info.status] })
     // amplitude
     const amplitudeValue = chart.domUtils.getDOMElm(
       '#' + Constant.AMPLITUDE_VALUE_ID
     )
-    amplitudeValue.innerHTML = fixNumber(info.amplitude, 2)
+    amplitudeValue.innerHTML = fixNumber(info.amplitude, 2) + '%'
     domUtils.setStyle(amplitudeValue, { color: Color[info.status] })
   }
 
