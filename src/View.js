@@ -218,7 +218,7 @@ export default class View {
     this.highDefinition(this.cursorCanvas)
     // 默认线条粗细
     this.ctx.lineWidth = 1 * this.dpr
-    // 5个物理像素点
+    // 5个逻辑像素点
     this.scaleHeight = 5 * this.dpr
     // 事件注册
     controller.registerMouseEvents()
@@ -294,19 +294,16 @@ export default class View {
     if (!drawAll) {
       this.drawTickerInfo()
     }
-    // window.requestAnimationFrame(() => {
     this.clearCursorCanvas()
     this.drawCursorCross(
       controller.nowMousePosition.x,
       controller.nowMousePosition.y
     )
-    // })
   }
 
   // 绘制全部画布
   draw () {
     this.drawMainCanvas()
-    // this.drawCursorCanvas(true)
   }
 
   // 绘制logo
@@ -454,7 +451,7 @@ export default class View {
 
   // 绘制轴线标签  列如:价格，数量，时间文本
   drawLabels (potision, value, axis, type) {
-    const chart = this.chart
+    const { chart } = this
 
     let _value = value
     const textPos = { x: 0, y: 0 }
@@ -743,13 +740,13 @@ export default class View {
     domUtils.setStyle(closeValue, { color: Color[info.status] })
     // change
     const changeValue = chart.domUtils.getDOMElm('#' + Constant.CHANGE_VALUE_ID)
-    changeValue.innerHTML = fixNumber(info.change, 2)
+    changeValue.innerHTML = info.change
     domUtils.setStyle(changeValue, { color: Color[info.status] })
     // amplitude
     const amplitudeValue = chart.domUtils.getDOMElm(
       '#' + Constant.AMPLITUDE_VALUE_ID
     )
-    amplitudeValue.innerHTML = fixNumber(info.amplitude, 2)
+    amplitudeValue.innerHTML = info.amplitude
     domUtils.setStyle(amplitudeValue, { color: Color[info.status] })
   }
 
