@@ -223,7 +223,7 @@ export default class View {
     // 事件注册
     controller.registerMouseEvents()
 
-    this.draw()
+    this.drawMainCanvas()
   }
 
   // 计算图表宽高数据
@@ -282,28 +282,20 @@ export default class View {
       this.drawLastTickerPrice()
       // 左上角行情填充
       this.drawTickerInfo()
-      // 绘制cursorcanvas
-      this.drawCursorCanvas(true)
     })
   }
 
   // 绘制指针画布
-  drawCursorCanvas (drawAll) {
+  drawCursorCanvas () {
     const { controller, chart } = this
     if (chart.switchPending) return
-    if (!drawAll) {
-      this.drawTickerInfo()
-    }
+
+    this.drawTickerInfo()
     this.clearCursorCanvas()
     this.drawCursorCross(
       controller.nowMousePosition.x,
       controller.nowMousePosition.y
     )
-  }
-
-  // 绘制全部画布
-  draw () {
-    this.drawMainCanvas()
   }
 
   // 绘制logo

@@ -62,7 +62,7 @@ export default class Controller {
 
     service.updateDataZoom(newDataZoomXAxisStartValue, newDataZoomXAxisEndValue)
 
-    view.draw()
+    view.drawMainCanvas()
     this.prevMousePosition = { x, y }
   }
 
@@ -104,6 +104,6 @@ export default class Controller {
     newDataZoomXAxisEndValue = service.dataZoom.xAxisEndValue - distance // eslint-disable-line
 
     service.updateDataZoom(newDataZoomXAxisStartValue, newDataZoomXAxisEndValue)
-    view.draw()
+    view.drawMainCanvas()
   }
 }

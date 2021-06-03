@@ -158,7 +158,7 @@ export default class BigoChart {
     // 最后一根k线如果在屏幕内才需要绘制
     const { x } = this.service.mapDataToCoordinate(candleToUpdate.time)
     if (x <= this.view.chartWidth) {
-      this.view.draw()
+      this.view.drawMainCanvas()
     }
   }
 
@@ -168,6 +168,6 @@ export default class BigoChart {
     this.updateOptions(newOptions)
     this.service.dataZoom.user = false
     this.switchPending = false
-    this.view.draw()
+    this.view.drawMainCanvas()
   }
 }
