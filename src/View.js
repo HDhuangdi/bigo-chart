@@ -349,7 +349,7 @@ export default class View {
     // 网格分割系数 默认42个数据
     const xAxisPosition = service.calcXAxisCoordinate()
 
-    // x底轴线
+    // x轴线
     chart.canvasUtils.drawLine(
       { x: this.padding.left, y: this.chartHeight + this.padding.top },
       {
@@ -502,7 +502,7 @@ export default class View {
   // 绘制蜡烛图
   drawCandleChart () {
     const { service, chart } = this
-    service.dataZoom.realData.forEach((ticker) => {
+    service.dataZoom.data.forEach((ticker) => {
       this.drawCandle(ticker)
       if (chart.options.hasVolume) {
         this.drawVolume(ticker)
@@ -513,13 +513,13 @@ export default class View {
   // 绘制折线图
   drawLineChart () {
     const { service, chart } = this
-    const realData = service.dataZoom.realData
+    const data = service.dataZoom.data
 
     this.ctx.beginPath()
     this.ctx.strokeStyle = '#fff'
     let lastPosition = { x: 0, y: 0 }
 
-    for (const ticker of realData) {
+    for (const ticker of data) {
       const closePosition = service.mapDataToCoordinate(
         ticker.time,
         ticker.close
@@ -537,7 +537,7 @@ export default class View {
 
     this.ctx.stroke()
 
-    realData.forEach((ticker) => {
+    data.forEach((ticker) => {
       if (chart.options.hasVolume) {
         this.drawVolume(ticker)
       }

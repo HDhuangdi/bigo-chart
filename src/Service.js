@@ -51,13 +51,9 @@ export default class Service {
   // 计算x轴所有标签的坐标
   calcXAxisCoordinate () {
     const { chart } = this
-    // 比值
-    const ratio =
-      (this.dataZoom.xAxisEndValue - this.dataZoom.xAxisStartValue) /
-      chart.tickerUnit
 
     // 每隔count个画一个刻度
-    const count = Math.floor(ratio / 10)
+    const count = Math.floor(this.dataZoom.data.length / 8)
     const xAxisData = []
     for (let index = 0; index < chart.bars.length; index += count) {
       xAxisData.push({
@@ -178,22 +174,16 @@ export default class Service {
     // 计算MA线所需数据 this.dataZoom.MAData
     this.calcMAList()
 
-    // 真正截取的data (为了拖动连贯性,需要前后各多拿1个)
-    this.dataZoom.realData = this.dataZoom.MAData.filter(
+    // 页面显示完全所需的k线数据 (为了拖动连贯性,需要前后各多拿1个)
+    this.dataZoom.data = this.dataZoom.MAData.filter(
       (bar) =>
         bar.time <= this.dataZoom.xAxisEndValue + chart.tickerUnit &&
         bar.time >= this.dataZoom.xAxisStartValue - chart.tickerUnit
     )
-    // 实际在屏幕上显示出的data
-    this.dataZoom.data = this.dataZoom.realData.filter(
-      (bar) =>
-        bar.time <= this.dataZoom.xAxisEndValue &&
-        bar.time >= this.dataZoom.xAxisStartValue
-    )
 
     // 行情y轴最高/最低的数据
-    const highest = Math.max(...this.dataZoom.realData.map((item) => item.high))
-    const lowest = Math.min(...this.dataZoom.realData.map((item) => item.low))
+    const highest = Math.max(...this.dataZoom.data.map((item) => item.high))
+    const lowest = Math.min(...this.dataZoom.data.map((item) => item.low))
     // Y轴缓冲系数 最大,最小
     this.dataZoom.klineYAxisEndValue =
       highest + (highest - lowest) * this.yAxisBuffer
@@ -202,7 +192,7 @@ export default class Service {
 
     // 交易量y轴最高/最低的数据
     this.highestVolume = Math.max(
-      ...this.dataZoom.realData.map((item) => item.volume)
+      ...this.dataZoom.data.map((item) => item.volume)
     )
     this.dataZoom.volumeYAxisEndValue =
       this.highestVolume + this.highestVolume * this.yAxisBuffer
