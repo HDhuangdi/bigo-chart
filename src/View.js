@@ -460,7 +460,10 @@ export default class View {
     const textPos = { x: 0, y: 0 }
     if (axis === 'x') {
       // x轴处理
-      _value = dateFormat('HH:MM', new Date(value))
+      _value = dateFormat(
+        `${chart.tickerUnit >= 1000 * 60 * 60 * 24 ? 'YYYY/mm/dd' : 'HH:MM'}`,
+        new Date(value)
+      )
       textPos.x = potision.x
       textPos.y = this.chartHeight + this.padding.top + this.scaleHeight
     } else if (axis === 'y') {
@@ -726,6 +729,10 @@ export default class View {
     const openValue = chart.domUtils.getDOMElm('#' + Constant.OPEN_VALUE_ID)
     openValue.innerHTML = fixNumber(info.open, chart.priceDigitNumber)
     domUtils.setStyle(openValue, { color: Color[info.status] })
+    // high
+    const highValue = chart.domUtils.getDOMElm('#' + Constant.HIGH_VALUE_ID)
+    highValue.innerHTML = fixNumber(info.high, chart.priceDigitNumber)
+    domUtils.setStyle(highValue, { color: Color[info.status] })
     // low
     const lowValue = chart.domUtils.getDOMElm('#' + Constant.LOW_VALUE_ID)
     lowValue.innerHTML = fixNumber(info.low, chart.priceDigitNumber)
@@ -824,7 +831,14 @@ export default class View {
     // 横坐标强制锁定寻找到的k线的中间部分
     const res = service.mapDataToCoordinate(ticker.time, 0)
 
-    const formatedTime = dateFormat('YYYY/mm/dd HH:MM', new Date(ticker.time))
+    const formatedTime = dateFormat(
+      `${
+        chart.tickerUnit >= 1000 * 60 * 60 * 24
+          ? 'YYYY/mm/dd'
+          : 'YYYY/mm/dd HH:MM'
+      }`,
+      new Date(ticker.time)
+    )
     // 绘制x轴矩形
     const { width: textWidth, height: textHeight } =
       chart.cursorCanvasUtils.getTextWidthAndHeight(

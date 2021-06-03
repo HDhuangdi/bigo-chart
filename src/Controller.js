@@ -40,13 +40,14 @@ export default class Controller {
     const y = e.offsetY
 
     this.nowMousePosition = { x, y }
+
     // 绘制
     if (!this.isMouseDown) return view.drawCursorCanvas()
     service.dataZoom.user = true
     const diffX = this.prevMousePosition.x - this.nowMousePosition.x
+
     // 拖动的距离
     const distance = diffX * service.unitToXAxisPx
-
     const firstCandleTime = chart.bars[0].time
     const newDataZoomXAxisStartValue =
       service.dataZoom.xAxisStartValue + distance
