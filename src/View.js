@@ -294,19 +294,16 @@ export default class View {
     if (!drawAll) {
       this.drawTickerInfo()
     }
-    // window.requestAnimationFrame(() => {
     this.clearCursorCanvas()
     this.drawCursorCross(
       controller.nowMousePosition.x,
       controller.nowMousePosition.y
     )
-    // })
   }
 
   // 绘制全部画布
   draw () {
     this.drawMainCanvas()
-    // this.drawCursorCanvas(true)
   }
 
   // 绘制logo
@@ -740,13 +737,13 @@ export default class View {
     domUtils.setStyle(closeValue, { color: Color[info.status] })
     // change
     const changeValue = chart.domUtils.getDOMElm('#' + Constant.CHANGE_VALUE_ID)
-    changeValue.innerHTML = fixNumber(info.change, 2) + '%'
+    changeValue.innerHTML = info.change
     domUtils.setStyle(changeValue, { color: Color[info.status] })
     // amplitude
     const amplitudeValue = chart.domUtils.getDOMElm(
       '#' + Constant.AMPLITUDE_VALUE_ID
     )
-    amplitudeValue.innerHTML = fixNumber(info.amplitude, 2) + '%'
+    amplitudeValue.innerHTML = info.amplitude
     domUtils.setStyle(amplitudeValue, { color: Color[info.status] })
   }
 

@@ -99,7 +99,7 @@ export default class Controller {
       if (service.dataZoom.data.length >= 200) return
       // 缩小
     }
-    /** dis */
+
     newDataZoomXAxisStartValue = service.dataZoom.xAxisStartValue + distance // eslint-disable-line
     newDataZoomXAxisEndValue = service.dataZoom.xAxisEndValue - distance // eslint-disable-line
 

@@ -55,7 +55,6 @@ export default class Service {
     const ratio =
       (this.dataZoom.xAxisEndValue - this.dataZoom.xAxisStartValue) /
       chart.tickerUnit
-    // 总共有 123 个
 
     // 每隔count个画一个刻度
     const count = Math.floor(ratio / 10)
@@ -67,7 +66,7 @@ export default class Service {
       })
     }
 
-    // x时间   500 个数据 中 每42个数据
+    // x时间
     const xAxisPosition = xAxisData.map((data) => {
       const res = this.mapDataToCoordinate(data.time, data.value)
       return {
@@ -185,7 +184,7 @@ export default class Service {
         bar.time >= this.dataZoom.xAxisStartValue
     )
 
-    // 真正截取的data (为了拖动连贯性,需要前后多拿2个)
+    // 真正截取的data (为了拖动连贯性,需要前后各多拿1个)
     this.dataZoom.realData = chart.bars.filter(
       (bar) =>
         bar.time <= this.dataZoom.xAxisEndValue + chart.tickerUnit &&
