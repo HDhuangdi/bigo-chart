@@ -1,4 +1,4 @@
-import { getAVG, simplifyNumber } from './utils'
+import { getAVG, simplifyNumber, fixNumber } from './utils'
 
 export default class Service {
   view
@@ -119,13 +119,36 @@ export default class Service {
   // 计算chart padding
   calcPadding (data) {
     const { chart, view } = this
-    const { width: textWidth } = chart.canvasUtils.getTextWidthAndHeight(
-      view.axisLabelSize * view.dpr,
-      'sans-serif',
-      simplifyNumber(
+    // y轴最长文本
+    let text
+    // 文本选择策略
+    let textStrategy
+    if (chart.options.hasVolume) {
+      if (chart.volumeDigitNumber < chart.priceDigitNumber) {
+        textStrategy = 'price'
+      } else {
+        textStrategy = 'volume'
+      }
+    } else {
+      textStrategy = 'price'
+    }
+
+    if (textStrategy === 'volume') {
+      text = simplifyNumber(
         Math.max(...data.map((item) => item.volume)),
         chart.volumeDigitNumber
       )
+    } else {
+      text = fixNumber(
+        Math.max(...data.map((item) => item.close)),
+        chart.priceDigitNumber
+      )
+    }
+
+    const { width: textWidth } = chart.canvasUtils.getTextWidthAndHeight(
+      view.axisLabelSize * view.dpr,
+      'sans-serif',
+      text
     )
 
     view.padding.top = 15 * view.dpr

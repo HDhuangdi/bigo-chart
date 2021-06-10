@@ -84,6 +84,14 @@ export default class BigoChart {
 
     mergeObject(this.options, options)
 
+    if (!isNaN(options.priceDigitNumber)) {
+      this.priceDigitNumber = options.priceDigitNumber
+    }
+
+    if (!isNaN(options.volumeDigitNumber)) {
+      this.volumeDigitNumber = options.volumeDigitNumber
+    }
+
     if (options.MA) {
       this.MAOptions = this.options.MA
     }
@@ -93,7 +101,7 @@ export default class BigoChart {
     this.bars = this.initBars(this.options.bars)
     // 检查是否有交易量
     if (this.options.hasVolume) {
-      this.options.hasVolume = this.bars.every((bar) => !!bar.volume)
+      this.options.hasVolume = this.bars.some((bar) => !!bar.volume)
     }
     this.tickerUnit = this.bars[1].time - this.bars[0].time
     this.setChartType(this.options.chartType)

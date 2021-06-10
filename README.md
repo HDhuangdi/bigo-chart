@@ -38,14 +38,16 @@ const chart = new BigoChart(option)
 
 ## 配置
 
-| 配置名称  | 配置说明                          | 可选值                                                                     | 类型                       |
-| --------- | --------------------------------- | -------------------------------------------------------------------------- | -------------------------- |
-| el        | 图表容器 id,如:'#chart-container' | /                                                                          | number                     |
-| bars      | 历史行情数据                      | { close: number; high: number; low: number; open: number; volume: number } | object                     |
-| symbol    | 产品标识                          | /                                                                          | string                     |
-| logo      | 公司 logo 路径                    | /                                                                          | string                     |
-| chartType | 图表类型                          | 1: 分时图; 2: 蜡烛图                                                       | number                     |
-| loadMore  | 分页回调,接受一个参数 endTime     | /                                                                          | (endTime: number) => :bars |
+| 配置名称          | 配置说明                          | 可选值                                                                     | 类型                       |
+| ----------------- | --------------------------------- | -------------------------------------------------------------------------- | -------------------------- |
+| el                | 图表容器 id,如:'#chart-container' | /                                                                          | number                     |
+| bars              | 历史行情数据                      | { close: number; high: number; low: number; open: number; volume: number } | object                     |
+| symbol            | 产品标识                          | /                                                                          | string                     |
+| logo              | 公司 logo 路径                    | /                                                                          | string                     |
+| chartType         | 图表类型                          | 1: 分时图; 2: 蜡烛图                                                       | number                     |
+| priceDigitNumber  | 价格精度                          | /                                                                          | number                     |
+| volumeDigitNumber | 交易量精度                        | /                                                                          | number                     |
+| loadMore          | 分页回调,接受一个参数 endTime     | /                                                                          | (endTime: number) => :bars |
 
 ## API
 
